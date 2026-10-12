@@ -1,0 +1,196 @@
+<div class="container">
+  <!-- Progress Tracker -->
+  <div class="checkout-stepper">
+    <div class="step-item completed">
+      <div class="step-circle">✓</div>
+      <div class="step-label">1. Plan Selected</div>
+    </div>
+    <div class="step-line active"></div>
+    <div class="step-item" [class.completed]="isPaymentDoneForMonth" [class.active]="!isPaymentDoneForMonth">
+      <div class="step-circle">{{ isPaymentDoneForMonth ? '✓' : '2' }}</div>
+      <div class="step-label">2. Escrow Payment</div>
+    </div>
+    <div class="step-line" [class.active]="isPaymentDoneForMonth"></div>
+    <div class="step-item" [class.active]="isPaymentDoneForMonth">
+      <div class="step-circle">3</div>
+      <div class="step-label">3. Policy Issued</div>
+    </div>
+  </div>
+
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Escrow Premium Checkout</h1>
+      <p class="page-subtitle">Lock in your project delay insurance protection</p>
+    </div>
+    <a *ngIf="quote$ | async as q" [routerLink]="['/quotes/applications', q.applicationId]" class="btn btn-outline">
+      &larr; Back to Plans
+    </a>
+  </div>
+
+  <div class="checkout-grid">
+    <!-- Plan Summary Card -->
+    <div class="card summary-card" *ngIf="quote$ | async as quote">
+      <div class="summary-header">
+        <span class="plan-tag">{{ quote.planName }} PLAN</span>
+        <span class="badge badge-success">✓ Verified Rate</span>
+      </div>
+
+      <div class="pricing-headline">
+        <div class="premium-total">₹{{ quote.premiumAmount | number }}</div>
+        <div class="premium-desc">Monthly Escrow Premium Installment</div>
+      </div>
+
+      <div class="summary-details">
+        <div class="summary-item">
+          <span class="item-label">Monthly Delay Payout</span>
+          <strong class="item-val">₹{{ quote.monthlyCompensation | number }}/mo</strong>
+        </div>
+        <div class="summary-item">
+          <span class="item-label">Maximum Delay Coverage</span>
+          <strong class="item-val">{{ quote.maximumDelayMonths }} Months</strong>
+        </div>
+        <div class="summary-item">
+          <span class="item-label">Total Maximum Indemnity</span>
+          <strong class="item-val highlight-total">₹{{ quote.maximumPayout | number }}</strong>
+        </div>
+        <div class="summary-item">
+          <span class="item-label">Grace Period</span>
+          <strong class="item-val">{{ quote.gracePeriodDays }} Days</strong>
+        </div>
+        <div class="summary-item">
+          <span class="item-label">Application ID</span>
+          <strong class="item-val">#{{ quote.applicationId }}</strong>
+        </div>
+        <div class="summary-item" *ngIf="isPaymentDoneForMonth">
+          <span class="item-label">Billing Cycle</span>
+          <strong class="item-val" style="color: #15803d;">{{ currentMonthName }} (Paid)</strong>
+        </div>
+      </div>
+
+      <div class="guarantee-box">
+        <div class="guarantee-icon">🛡️</div>
+        <div class="guarantee-text">
+          <strong>100% Escrow Backed</strong>
+          <p>Delay payouts are held securely in escrow and released automatically upon verified construction lag.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Checkout Payment Form Card -->
+    <div class="card checkout-card">
+      <div class="card-top-bar">
+        <h3 class="checkout-title">Payment Authorization</h3>
+        <span class="security-chip">🔒 256-Bit SSL Encrypted</span>
+      </div>
+
+      <!-- Payment Done for This Month Message Banner -->
+      <div *ngIf="isPaymentDoneForMonth" class="payment-completed-banner mb-4">
+        <div class="banner-icon-col">
+          <div class="check-circle">✓</div>
+        </div>
+        <div class="banner-body">
+          <h4 class="banner-heading">Payment Done for This Month!</h4>
+          <p class="banner-message">
+            Your escrow premium payment of <strong>₹{{ (existingPayment?.premiumAmount || (quote$ | async)?.premiumAmount) | number }}</strong> 
+            has been successfully processed for <strong>{{ currentMonthName }}</strong>.
+          </p>
+          <p class="banner-submessage">
+            As payment is scheduled once per month, the payment button is disabled. No further payment is needed for this monthly cycle.
+          </p>
+          <div class="banner-footer-actions">
+            <a routerLink="/policies" class="btn btn-primary btn-sm">
+              📄 View Active Policy Certificate &rarr;
+            </a>
+            <a routerLink="/payments/history" class="btn btn-outline btn-sm">
+              📜 Payment Ledger
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Inline Error Alert -->
+      <div *ngIf="error$ | async as err" class="alert alert-danger custom-alert">
+        <div class="alert-icon">⚠️</div>
+        <div class="alert-body">
+          <strong>Payment Gateway Notice</strong>
+          <p>{{ err }}</p>
+        </div>
+      </div>
+
+      <form [formGroup]="checkoutForm" (ngSubmit)="onSubmitPayment()">
+        <div class="form-group" [class.form-disabled]="isPaymentDoneForMonth">
+          <label class="form-label">Select Payment Provider / Gateway</label>
+          <div class="provider-options">
+            <label class="radio-card" [class.selected]="checkoutForm.get('paymentProvider')?.value === 'RAZORPAY_GATEWAY'" [class.disabled-radio]="isPaymentDoneForMonth">
+              <input type="radio" value="RAZORPAY_GATEWAY" formControlName="paymentProvider" [disabled]="isPaymentDoneForMonth" />
+              <div class="provider-info">
+                <span class="provider-name">Razorpay Gateway (UPI / QR / NetBanking)</span>
+                <span class="provider-sub">Zero-fee instant escrow deposit</span>
+              </div>
+            </label>
+            <label class="radio-card" [class.selected]="checkoutForm.get('paymentProvider')?.value === 'STRIPE_ESCROW'" [class.disabled-radio]="isPaymentDoneForMonth">
+              <input type="radio" value="STRIPE_ESCROW" formControlName="paymentProvider" [disabled]="isPaymentDoneForMonth" />
+              <div class="provider-info">
+                <span class="provider-name">Stripe Escrow (Cards & Global Vault)</span>
+                <span class="provider-sub">Visa, Mastercard, RuPay, Amex</span>
+              </div>
+            </label>
+            <label class="radio-card" [class.selected]="checkoutForm.get('paymentProvider')?.value === 'NET_BANKING_ESCROW'" [class.disabled-radio]="isPaymentDoneForMonth">
+              <input type="radio" value="NET_BANKING_ESCROW" formControlName="paymentProvider" [disabled]="isPaymentDoneForMonth" />
+              <div class="provider-info">
+                <span class="provider-name">Direct Bank Escrow Authorization</span>
+                <span class="provider-sub">SBI, HDFC, ICICI, Axis Bank</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div class="payload-preview card mb-3" *ngIf="!isPaymentDoneForMonth">
+          <div class="preview-title">Request Payload Details</div>
+          <div class="preview-item">
+            <span>Target Quote ID:</span>
+            <code>{{ quoteId }}</code>
+          </div>
+          <div class="preview-item">
+            <span>Payment Provider:</span>
+            <code>{{ checkoutForm.get('paymentProvider')?.value }}</code>
+          </div>
+          <div class="preview-item">
+            <span>Monthly Escrow Amount:</span>
+            <strong *ngIf="quote$ | async as q">₹{{ q.premiumAmount | number }}</strong>
+          </div>
+        </div>
+
+        <!-- Payment Submit Button with Disabled State & Message -->
+        <button 
+          type="submit" 
+          class="btn btn-block btn-lg pay-btn" 
+          [ngClass]="{
+            'btn-disabled-done': isPaymentDoneForMonth,
+            'btn-success': !isPaymentDoneForMonth
+          }"
+          [disabled]="isPaymentDoneForMonth || checkoutForm.invalid || (loading$ | async)">
+          
+          <span *ngIf="isPaymentDoneForMonth" class="btn-content">
+            <span class="icon-lock">🔒</span> Payment Done for This Month
+          </span>
+
+          <span *ngIf="!isPaymentDoneForMonth && !(loading$ | async)" class="btn-content">
+            Authorize & Lock Escrow Coverage &rarr;
+          </span>
+
+          <span *ngIf="!isPaymentDoneForMonth && (loading$ | async)" class="btn-content">
+            <span class="spinner-small"></span> Securing Escrow Deposit...
+          </span>
+        </button>
+
+        <p class="terms-notice" *ngIf="!isPaymentDoneForMonth">
+          Submits <code>quoteId</code> and <code>paymentProvider</code> to Payment Service to authorize transaction and lock escrow funds.
+        </p>
+        <p class="terms-notice text-success" *ngIf="isPaymentDoneForMonth" style="color: #15803d; font-weight: 500;">
+          ✓ Monthly cycle covered. Your next scheduled installment will unlock next month.
+        </p>
+      </form>
+    </div>
+  </div>
+</div>

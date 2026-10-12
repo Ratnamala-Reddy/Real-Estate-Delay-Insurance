@@ -1,0 +1,156 @@
+====================================================================================================
+                       REAL ESTATE PROJECT DELAY INSURANCE PLATFORM
+                                 USER JOURNEY MAPPING
+====================================================================================================
+
+This document outlines the complete, end-to-end user journeys for both primary personas:
+  1. BUYER (Property Purchaser / Insured Customer)
+  2. ADMIN (Underwriter, Pricing Actuary, Claims Adjuster, Escrow Manager)
+
+----------------------------------------------------------------------------------------------------
+PART 1: BUYER (CUSTOMER) JOURNEY
+----------------------------------------------------------------------------------------------------
+
+STAGE 1: REGISTRATION & ONBOARDING
+  - User Goal:    Create an account to purchase delay protection insurance.
+  - Action Taken: Navigates to registration page, enters Full Name, Email, Phone, and Password.
+  - Touchpoint:   Auth Service / Web Portal (`/auth/register`).
+  - System State: Account created with status: `PENDING_VERIFICATION`.
+  - Guardrail:    Buyer is notified that account verification by an administrator is required 
+                  before underwriting decisions and quote generation can be unlocked.
+
+STAGE 2: INSURANCE APPLICATION SUBMISSION
+  - User Goal:    Apply for project delay coverage for a new apartment or land purchase.
+  - Action Taken: Navigates to "New Application", enters:
+                  * Property & project details (Unit Cost, Builder Name, Project Location)
+                  * Promised possession / handover date
+                  * Uploads Allotment Letter & Builder-Buyer Agreement documents.
+  - Touchpoint:   Application Service (`/applications`).
+  - System State: Application status: `SUBMITTED`.
+  - Guardrail:    Input validation prevents submitting past possession dates or zero values.
+
+STAGE 3: UNDERWRITING REVIEW & DYNAMIC QUOTATION
+  - User Goal:    Compare available insurance coverage plans and choose an affordable quote.
+  - Action Taken: Once admin verifies application, buyer opens "Quotes" section.
+  - Touchpoint:   Policy & Risk Rating Service (`/quotes`).
+  - System State: Rating engine dynamically evaluates property cost + project risk score.
+                  Generates 3 distinct plans tailored to the project:
+                  * BASIC PLAN    : 4-digit monthly premium (₹1,200 - ₹9,900)
+                  * STANDARD PLAN : 5-digit monthly premium (₹10,500 - ₹48,000)
+                  * PREMIUM PLAN  : 5-digit monthly premium (₹20,000 - ₹88,000)
+  - Outcome:      Buyer reviews monthly indemnity limits, maximum delay months, and coverage caps.
+
+STAGE 4: QUOTE ACCEPTANCE & POLICY ISSUANCE
+  - User Goal:    Confirm chosen insurance plan and obtain policy certificate.
+  - Action Taken: Clicks "Accept Quote" on the preferred plan (e.g., Standard Plan).
+  - Touchpoint:   Policy Service (`/policies`).
+  - System State: Quote status: `ACCEPTED`.
+                  Active Policy automatically generated with policy number (e.g. POL-6A453296).
+                  Status: `ACTIVE`. Digital certificate displayed in portal.
+
+STAGE 5: MONTHLY PREMIUM BILLING & ESCROW PAYMENT
+  - User Goal:    Pay the recurring monthly insurance premium securely.
+  - Action Taken: Navigates to "Escrow Payments", selects payment gateway, and completes payment.
+  - Touchpoint:   Payment Service / Escrow Gateway (`/payments`).
+  - System State: Transaction recorded with status: `SUCCESS`.
+  - Guardrails:   1. Monthly Lock: Once paid, payment button is locked for the monthly cycle
+                     with badge: "Payment Done for this Month".
+                  2. Privacy Isolation: Buyer strictly views only their own escrow payments.
+
+STAGE 6: DELAY CLAIM REGISTRATION
+  - User Goal:    File an indemnity claim when builder delays possession past promised date.
+  - Action Taken: Navigates to "File Delay Claim", selects active policy, enters:
+                  * Claimed compensation amount
+                  * Delay reason (e.g., Builder delayed handover, site halted)
+                  * Revised expected possession date.
+  - Touchpoint:   Claim Service (`/claims`).
+  - System State: Claim registered with status: `DOCUMENTS_SUBMITTED`.
+  - Guardrail:    Conflict Prevention: Only one active claim allowed per policy ID at a time.
+                  (Closed or rejected claims do not block new claims).
+
+STAGE 7: CLAIM ADJUDICATION TRACKING & INDEMNITY PAYOUT
+  - User Goal:    Track claim progress and receive approved delay compensation funds.
+  - Action Taken: Monitors real-time adjudication status inside Claims Center.
+  - Touchpoint:   Claims & Escrow Disbursement System (`/claims`, `/payments/compensation`).
+  - System State: Status advances: `ELIGIBILITY_VERIFIED` -> `DELAY_VERIFIED` -> `SETTLED` -> `CLOSED`.
+  - Outcome:      Approved compensation amount transferred to buyer's escrow account.
+
+
+----------------------------------------------------------------------------------------------------
+PART 2: ADMIN (UNDERWRITER & CLAIMS ADJUSTER) JOURNEY
+----------------------------------------------------------------------------------------------------
+
+STAGE 1: COMMAND CENTER & KPI MONITORING
+  - User Goal:    Monitor health of real estate insurance operations across all queues.
+  - Action Taken: Logs into Admin Command Center (`/admin/dashboard`).
+  - System State: Displays live KPI cards: Registered Accounts, Pending Verifications, 
+                  Active Policies, and Claims in Review.
+                  Provides clean tabbed queues: [Pending Claims] | [Escrow Payments] | [Payouts].
+
+STAGE 2: USER VERIFICATION & ACTIVATION
+  - User Goal:    Authenticate identity of newly registered buyers before underwriting.
+  - Action Taken: Checks user management table; clicks "Activate" for pending users.
+  - Touchpoint:   Auth Service (`/admin/users/{id}/activate`).
+  - System State: User account status updated to `VERIFIED`.
+
+STAGE 3: UNDERWRITING AUDIT & DOCUMENT VERIFICATION
+  - User Goal:    Verify project legal standing, builder credentials, and RERA registration.
+  - Action Taken: Opens Underwriting Queue, inspects allotment agreements & title deeds.
+                  Marks application as `VERIFIED` (or declines if non-compliant).
+  - Touchpoint:   Verify Service (`/verifications`).
+  - System State: Application verified; ready for dynamic risk rating.
+
+STAGE 4: DYNAMIC RISK SCORING & RATING
+  - User Goal:    Evaluate builder completion track record, financial risk, and delay risk.
+  - Action Taken: Triggers Risk Scoring Engine.
+  - Touchpoint:   Risk Service (`/risks`).
+  - System State: Computes composite Risk Score (0-100) and category (`LOW` / `MEDIUM` / `HIGH`).
+                  Feeds verified parameters into dynamic Pricing Engine to generate dynamic quotes.
+
+STAGE 5: ESCROW PAYMENT SETTLEMENT & POLICY LIFECYCLE
+  - User Goal:    Audit buyer premium payments and simulate payment gateway webhook processing.
+  - Action Taken: Navigates to "Escrow Payments & Settlement" tab; verifies transaction reference.
+                  Clicks "Settle & Issue Policy" to execute payment confirmation webhook.
+  - Touchpoint:   Payment Service (`/payments/webhook/premium`).
+  - System State: Payment status locked as `SUCCESS`; Active policy confirmed.
+
+STAGE 6: DELAY CLAIM ADJUDICATION (4-STEP AUDIT)
+  - User Goal:    Adjudicate buyer delay claim accurately according to policy terms.
+  - Action Taken: Selects claim from Pending Claims Queue and steps through adjudication:
+                  1. Audit Delay: Calculates verified delay months (capped by policy terms).
+                  2. Calculate Compensation: Multiplies delay months by monthly indemnity rate.
+                  3. Verify Eligibility: Validates active policy window and lack of prior active claims.
+                  4. Approval Decision: Approves claim and locks binding settlement payout.
+  - Touchpoint:   Claim Service (`/claims/{id}/adjudicate`).
+  - System State: Claim status: `DELAY_VERIFIED` with approved payout amount.
+
+STAGE 7: COMPENSATION DISBURSEMENT & CLAIM CLOSURE
+  - User Goal:    Disburse compensation indemnity funds to the buyer and archive the claim.
+  - Action Taken: Navigates to "Claim Compensation Payouts" tab on dashboard; clicks "Disburse Payout".
+  - Touchpoint:   Payment Service (`/payments/webhook/compensation`).
+  - System State: Webhook processes payment reference -> Status: `PAID`.
+                  Claim record updated to final status: `CLOSED`.
+                  Audit logs and settlement receipt finalized.
+
+
+----------------------------------------------------------------------------------------------------
+PART 3: CORE SYSTEM INTEGRITY & PRIVACY RULES
+----------------------------------------------------------------------------------------------------
+
+1. TENANT DATA PRIVACY:
+   Each buyer has strict row-level isolation. They can only query and view their own applications,
+   policies, payments, and claims. Admin dashboard provides global operational visibility.
+
+2. PAYMENT FREQUENCY SAFEGUARD:
+   Premium payments are strictly rate-limited to one payment per monthly billing cycle. Once paid,
+   the payment CTA is locked with visual confirmation badge.
+
+3. CONFLICT-FREE CLAIM CONCURRENCY:
+   Only one active/open claim is permitted per policy. However, once a prior claim is CLOSED 
+   or REJECTED, the buyer is eligible to file a new claim for subsequent delay periods.
+
+4. REALISTIC DYNAMIC PRICING ENGINE:
+   Premium is dynamically derived using: (Property Cost * Risk Factor) / Term Factors.
+   - Base plan premium is strictly in 4 digits (₹1,200 - ₹9,900 / month).
+   - Standard and Premium plans are strictly in 5 digits (₹10,500 - ₹88,000 / month).
+====================================================================================================

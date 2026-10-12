@@ -1,0 +1,28 @@
+.workflow-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--slate-100);
+}
+.highlight {
+  color: var(--success);
+  font-size: 1.1rem;
+}
+.step-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.final-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+@media (max-width: 768px) {
+  .workflow-grid { grid-template-columns: 1fr; }
+}

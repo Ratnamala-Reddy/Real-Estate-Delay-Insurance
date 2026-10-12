@@ -1,0 +1,326 @@
+<div class="container admin-container">
+  <!-- Dashboard Hero Header -->
+  <div class="page-header admin-page-header">
+    <div>
+      <div *ngIf="currentUser$ | async as user" class="welcome-badge">
+        <span class="avatar-mini">{{ (user.firstName || 'A')[0] | uppercase }}</span>
+        <span>Welcome back, <strong>{{ user.firstName }} {{ user.lastName }}</strong> (System Admin)</span>
+      </div>
+      <h1 class="page-title">Executive Operations & Underwriting Center</h1>
+      <p class="page-subtitle">Unified controls across insurance underwriting, risk scoring, policy portfolios, and settlement claims</p>
+    </div>
+  </div>
+
+  <!-- KPI Metric Cards Grid -->
+  <div class="stats-grid">
+    <div class="card stat-card stat-users">
+      <div class="stat-icon-wrap">👥</div>
+      <div class="stat-content">
+        <div class="stat-num" *ngIf="users$ | async as u">{{ u.length }}</div>
+        <div class="stat-label">Registered Accounts</div>
+        <a routerLink="/admin/users" class="stat-link">Manage Users &rarr;</a>
+      </div>
+    </div>
+
+    <div class="card stat-card stat-verif">
+      <div class="stat-icon-wrap">📋</div>
+      <div class="stat-content">
+        <div class="stat-num" *ngIf="pendingVerificationsCount$ | async as pending">{{ pending }}</div>
+        <div class="stat-label">Pending Underwriting</div>
+        <a routerLink="/verifications" class="stat-link">Review Queue &rarr;</a>
+      </div>
+    </div>
+
+    <div class="card stat-card stat-risk">
+      <div class="stat-icon-wrap">📊</div>
+      <div class="stat-content">
+        <div class="stat-num" *ngIf="verifiedCount$ | async as verified">{{ verified }}</div>
+        <div class="stat-label">Verified & Eligible</div>
+        <a routerLink="/verifications" class="stat-link">View Applications &rarr;</a>
+      </div>
+    </div>
+
+    <div class="card stat-card stat-policies">
+      <div class="stat-icon-wrap">🛡️</div>
+      <div class="stat-content">
+        <div class="stat-num" *ngIf="activePoliciesCount$ | async as polCount">{{ polCount }}</div>
+        <div class="stat-label">Active Policies</div>
+        <a routerLink="/policies" class="stat-link">Manage Portfolio &rarr;</a>
+      </div>
+    </div>
+
+    <div class="card stat-card stat-claims">
+      <div class="stat-icon-wrap">⚡</div>
+      <div class="stat-content">
+        <div class="stat-num" *ngIf="activeClaimsCount$ | async as claimsCount">{{ claimsCount }}</div>
+        <div class="stat-label">Claims In Review</div>
+        <a routerLink="/claims/adjudication" class="stat-link">Adjudicate &rarr;</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Microservice Quick Action Hub -->
+  <div class="action-hub-section">
+    <div class="section-title-wrap">
+      <h3 class="hub-heading">⚡ Operations Command Hub</h3>
+      <p class="hub-subheading">Direct access to core workflows</p>
+    </div>
+
+    <div class="hub-cards-grid">
+      <a routerLink="/verifications" class="hub-card">
+        <div class="hub-icon bg-verif">📋</div>
+        <div class="hub-info">
+          <h4>Underwriting Queue</h4>
+          <p>Review title deeds, RERA compliance, approve apps</p>
+        </div>
+        <span class="hub-arrow">&rarr;</span>
+      </a>
+
+      <a routerLink="/claims/adjudication" class="hub-card">
+        <div class="hub-icon bg-claim">⚡</div>
+        <div class="hub-info">
+          <h4>Claims Adjudication</h4>
+          <p>Calculate delay months and authorize payout</p>
+        </div>
+        <span class="hub-arrow">&rarr;</span>
+      </a>
+
+      <a routerLink="/policies" class="hub-card">
+        <div class="hub-icon bg-pol">🛡️</div>
+        <div class="hub-info">
+          <h4>Policies Portfolio</h4>
+          <p>Inspect active coverage & insured properties</p>
+        </div>
+        <span class="hub-arrow">&rarr;</span>
+      </a>
+
+      <a routerLink="/admin/users" class="hub-card">
+        <div class="hub-icon bg-user">👥</div>
+        <div class="hub-info">
+          <h4>User Administration</h4>
+          <p>Manage buyer/admin accounts & activations</p>
+        </div>
+        <span class="hub-arrow">&rarr;</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Consolidated Operational Data Center with Clean Tabs -->
+  <div class="card data-hub-card">
+    <!-- Clean Tab Navigation -->
+    <div class="tab-header-bar">
+      <div class="tabs-nav">
+        <button
+          type="button"
+          class="tab-btn"
+          [class.active]="activeTab === 'claims'"
+          (click)="setActiveTab('claims')">
+          <span class="tab-icon">⚡</span>
+          <span>Pending Claims Queue</span>
+          <span class="tab-count" *ngIf="claims$ | async as cl">{{ cl.length }}</span>
+        </button>
+
+        <button
+          type="button"
+          class="tab-btn"
+          [class.active]="activeTab === 'escrow'"
+          (click)="setActiveTab('escrow')">
+          <span class="tab-icon">💳</span>
+          <span>Escrow Payments & Settlement</span>
+          <span class="tab-count" *ngIf="allPayments$ | async as pm">{{ pm.length }}</span>
+        </button>
+
+        <button
+          type="button"
+          class="tab-btn"
+          [class.active]="activeTab === 'payouts'"
+          (click)="setActiveTab('payouts')">
+          <span class="tab-icon">💸</span>
+          <span>Claim Compensation Payouts</span>
+          <span class="tab-count" *ngIf="allCompensationPayments$ | async as cp">{{ cp.length }}</span>
+        </button>
+      </div>
+
+      <div class="tab-actions">
+        <a *ngIf="activeTab === 'claims'" routerLink="/claims" class="btn btn-outline btn-sm">Full Claims Center &rarr;</a>
+        <button *ngIf="activeTab === 'escrow'" type="button" class="btn btn-outline btn-sm" (click)="loadAllPayments()">🔄 Refresh</button>
+        <button *ngIf="activeTab === 'payouts'" type="button" class="btn btn-outline btn-sm" (click)="loadAllCompensationPayments()">🔄 Refresh</button>
+      </div>
+    </div>
+
+    <!-- Feedback Alerts -->
+    <div *ngIf="webhookSuccessMsg" class="alert-box success-box">
+      ✅ {{ webhookSuccessMsg }}
+      <div style="margin-top: 0.35rem;">
+        <a routerLink="/policies" class="btn btn-sm btn-success">View Active Policies Portfolio &rarr;</a>
+      </div>
+    </div>
+
+    <div *ngIf="webhookErrorMsg" class="alert-box error-box">
+      ⚠️ {{ webhookErrorMsg }}
+    </div>
+
+    <!-- TAB 1: CLAIMS QUEUE -->
+    <div *ngIf="activeTab === 'claims'" class="tab-pane">
+      <div *ngIf="claims$ | async as claims" class="table-responsive">
+        <div *ngIf="claims.length === 0" class="empty-state">
+          <span class="empty-icon">📂</span>
+          <h4>No Delay Claims Pending</h4>
+          <p>No claims raised by buyers currently in the review queue.</p>
+        </div>
+
+        <table *ngIf="claims.length > 0" class="data-table">
+          <thead>
+            <tr>
+              <th>Claim ID</th>
+              <th>Policy ID</th>
+              <th>Claimed Amount</th>
+              <th>Verified Delay</th>
+              <th>Approved Payout</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let c of claims">
+              <td><code class="code-id" [title]="c.claimId">{{ c.claimId | slice:0:8 }}...</code></td>
+              <td><code class="code-id" [title]="c.policyId">{{ c.policyId | slice:0:8 }}...</code></td>
+              <td class="price-cell">₹{{ (c.claimedAmount || 0) | number }}</td>
+              <td><strong>{{ c.eligibleDelayMonths ? (c.eligibleDelayMonths + ' Months') : 'Pending' }}</strong></td>
+              <td>{{ c.approvedAmount ? ('₹' + (c.approvedAmount | number)) : 'Under Assessment' }}</td>
+              <td>
+                <span class="badge" [ngClass]="{
+                  'badge-warning': c.status === 'DRAFT' || c.status === 'DOCUMENTS_SUBMITTED',
+                  'badge-info': c.status === 'DELAY_VERIFIED' || c.status === 'ELIGIBILITY_VERIFIED',
+                  'badge-success': c.status === 'APPROVED' || c.status === 'CLOSED' || c.status === 'SETTLED',
+                  'badge-danger': c.status === 'REJECTED'
+                }">{{ c.status }}</span>
+              </td>
+              <td>
+                <a [routerLink]="['/claims/adjudication']" [queryParams]="{ claimId: c.claimId }" class="btn btn-primary btn-sm">
+                  ⚡ Adjudicate
+                </a>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TAB 2: ESCROW PAYMENTS & SETTLEMENT -->
+    <div *ngIf="activeTab === 'escrow'" class="tab-pane">
+      <div *ngIf="allPayments$ | async as payments" class="table-responsive">
+        <div *ngIf="payments.length === 0" class="empty-state">
+          <span class="empty-icon">💳</span>
+          <h4>No Escrow Payments Found</h4>
+          <p>No premium payment transactions currently registered in database.</p>
+        </div>
+
+        <table *ngIf="payments.length > 0" class="data-table">
+          <thead>
+            <tr>
+              <th>Payment ID</th>
+              <th>Ref / Txn</th>
+              <th>Quote ID</th>
+              <th>App ID</th>
+              <th>Premium</th>
+              <th>Provider</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let p of payments">
+              <td><code class="code-id" [title]="p.paymentId">{{ p.paymentId | slice:0:8 }}...</code></td>
+              <td><strong>{{ p.transactionReference || 'N/A' }}</strong></td>
+              <td><code class="code-id" [title]="p.quoteId">{{ p.quoteId | slice:0:8 }}...</code></td>
+              <td>{{ p.applicationId ? ('#' + (p.applicationId | slice:0:8) + '...') : 'N/A' }}</td>
+              <td class="price-cell">₹{{ p.premiumAmount | number }}</td>
+              <td><span class="provider-pill">{{ p.paymentProvider }}</span></td>
+              <td>
+                <span class="badge" [ngClass]="{
+                  'badge-success': p.status === 'SUCCESS',
+                  'badge-warning': p.status === 'INITIATED' || p.status === 'PENDING',
+                  'badge-danger': p.status === 'FAILED'
+                }">{{ p.status }}</span>
+              </td>
+              <td>
+                <button 
+                  *ngIf="p.status === 'INITIATED' || p.status === 'PENDING'"
+                  type="button" 
+                  class="btn btn-primary btn-sm" 
+                  (click)="onSettlePayment(p)"
+                  [disabled]="settlingPaymentId === p.paymentId">
+                  <span *ngIf="settlingPaymentId !== p.paymentId">⚡ Settle & Issue</span>
+                  <span *ngIf="settlingPaymentId === p.paymentId">Settling...</span>
+                </button>
+                <span *ngIf="p.status === 'SUCCESS'" class="text-success font-semibold">
+                  ✅ Active
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TAB 3: COMPENSATION PAYOUTS -->
+    <div *ngIf="activeTab === 'payouts'" class="tab-pane">
+      <div *ngIf="loadingCompensationPayments" class="loading-inline">
+        <p>Loading compensation payouts...</p>
+      </div>
+
+      <div *ngIf="allCompensationPayments$ | async as compPayments" class="table-responsive">
+        <div *ngIf="compPayments.length === 0 && !loadingCompensationPayments" class="empty-state">
+          <span class="empty-icon">💸</span>
+          <h4>No Compensation Payouts</h4>
+          <p>No compensation payouts initiated yet.</p>
+        </div>
+
+        <table *ngIf="compPayments.length > 0" class="data-table">
+          <thead>
+            <tr>
+              <th>Payment ID</th>
+              <th>Claim ID</th>
+              <th>Policy ID</th>
+              <th>Payout Amount</th>
+              <th>Transaction Ref</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let cp of compPayments">
+              <td><code class="code-id" [title]="cp.paymentId">{{ cp.paymentId | slice:0:8 }}...</code></td>
+              <td><code class="code-id" [title]="cp.claimId">{{ cp.claimId | slice:0:8 }}...</code></td>
+              <td><code class="code-id" [title]="cp.policyId">{{ cp.policyId | slice:0:8 }}...</code></td>
+              <td class="price-cell">₹{{ (cp.payoutAmount || 0) | number }}</td>
+              <td><strong>{{ cp.transactionReference || 'N/A' }}</strong></td>
+              <td>
+                <span class="badge" [ngClass]="{
+                  'badge-success': cp.status === 'PAID',
+                  'badge-warning': cp.status === 'INITIATED' || cp.status === 'PENDING',
+                  'badge-danger': cp.status === 'FAILED'
+                }">{{ cp.status }}</span>
+              </td>
+              <td>
+                <button 
+                  *ngIf="cp.status === 'INITIATED' || cp.status === 'PENDING'"
+                  type="button" 
+                  class="btn btn-success btn-sm" 
+                  (click)="onSettleCompensationPayment(cp)"
+                  [disabled]="settlingCompensationId === cp.paymentId">
+                  <span *ngIf="settlingCompensationId !== cp.paymentId">💸 Disburse</span>
+                  <span *ngIf="settlingCompensationId === cp.paymentId">Disbursing...</span>
+                </button>
+                <span *ngIf="cp.status === 'PAID'" class="text-success font-semibold">
+                  ✅ Disbursed
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

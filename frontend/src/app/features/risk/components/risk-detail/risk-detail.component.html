@@ -1,0 +1,18 @@
+<div class="container" *ngIf="assessment$ | async as a">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Risk Assessment: {{ a.assessmentId }}</h1>
+      <p class="page-subtitle">Application: {{ a.applicationId }}</p>
+    </div>
+    <a [routerLink]="['/applications', a.applicationId]" class="btn btn-outline">Back to Application</a>
+  </div>
+
+  <div class="card">
+    <div class="risk-summary">
+      <div class="risk-badge" [ngClass]="'badge-' + a.riskCategory.toLowerCase()">{{ a.riskCategory }} RISK</div>
+      <h2>Calculated Multiplier: {{ a.premiumMultiplier }}x</h2>
+      <p>Assessed By: {{ a.assessedBy }} on {{ a.assessedAt | date:'medium' }}</p>
+      <p *ngIf="a.remarks">Remarks: {{ a.remarks }}</p>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,88 @@
+<nav class="navbar">
+  <div class="nav-container">
+    <a [routerLink]="getBrandLink(userRole$ | async)" (click)="closeMobileMenu()" class="brand">
+      <div class="brand-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+        </svg>
+      </div>
+      <div class="brand-info">
+        <span class="brand-text">DelayGuard</span>
+        <span class="brand-sub">Real Estate Insurance</span>
+      </div>
+    </a>
+
+    <!-- Desktop & Mobile Navigation Links -->
+    <div class="nav-links" [class.open]="isMobileMenuOpen">
+
+      <!-- Buyer Navigation -->
+      <ng-container *appHasRole="['BUYER']">
+        <a routerLink="/applications" (click)="closeMobileMenu()" routerLinkActive="active" class="nav-link">My Applications</a>
+        <a routerLink="/applications/new" (click)="closeMobileMenu()" routerLinkActive="active" class="nav-link">+ Apply for Cover</a>
+        <a routerLink="/policies" (click)="closeMobileMenu()" routerLinkActive="active" class="nav-link">My Policies</a>
+        <a routerLink="/claims" (click)="closeMobileMenu()" routerLinkActive="active" class="nav-link">Claims & Payouts</a>
+        <a routerLink="/payments/history" (click)="closeMobileMenu()" routerLinkActive="active" class="nav-link">Escrow Payments</a>
+        <a routerLink="/auth/profile" (click)="closeMobileMenu()" routerLinkActive="active" class="nav-link">Profile</a>
+      </ng-container>
+
+      <!-- Admin Navigation -->
+      <ng-container *appHasRole="['ADMIN']">
+        <a routerLink="/admin/dashboard" (click)="closeMobileMenu()" routerLinkActive="active" class="nav-link">Admin Dashboard</a>
+        <a routerLink="/verifications" (click)="closeMobileMenu()" routerLinkActive="active" class="nav-link">Verifications</a>
+        <a routerLink="/policies" (click)="closeMobileMenu()" routerLinkActive="active" class="nav-link">Policies</a>
+        <a routerLink="/claims" (click)="closeMobileMenu()" routerLinkActive="active" class="nav-link">Claims Queue</a>
+        <a routerLink="/claims/adjudication" (click)="closeMobileMenu()" routerLinkActive="active" class="nav-link">Adjudication</a>
+        <a routerLink="/admin/users" (click)="closeMobileMenu()" routerLinkActive="active" class="nav-link">Users</a>
+      </ng-container>
+
+      <!-- Auth Action Links -->
+      <div class="auth-actions" *ngIf="currentUrl$ | async as url">
+        <ng-container *ngIf="(isAuthenticated$ | async); else guestActions">
+          <div class="user-profile-badge" *ngIf="currentUser$ | async as user; else roleOnlyBadge">
+            <div class="user-avatar">{{ ((user.firstName || user.email || 'U')[0]) | uppercase }}</div>
+            <div class="user-meta">
+              <span class="user-display-name">{{ (user.firstName + (user.lastName ? ' ' + user.lastName : '')) || user.email }}</span>
+              <span class="role-pill" [class.admin]="user.role === 'ADMIN'">{{ user.role }}</span>
+            </div>
+          </div>
+          <ng-template #roleOnlyBadge>
+            <div class="user-profile-badge" *ngIf="userRole$ | async as role">
+              <div class="user-avatar">{{ role[0] | uppercase }}</div>
+              <div class="user-meta">
+                <span class="role-pill" [class.admin]="role === 'ADMIN'">{{ role }}</span>
+              </div>
+            </div>
+          </ng-template>
+          <button (click)="logout()" class="btn btn-outline btn-sm logout-btn">
+            <span>Logout</span>
+          </button>
+        </ng-container>
+
+        <ng-template #guestActions>
+          <!-- If on login page, don't show login button; only show register -->
+          <ng-container *ngIf="url.includes('/auth/login')">
+            <a routerLink="/auth/register" (click)="closeMobileMenu()" class="btn btn-primary btn-sm">Create Account</a>
+          </ng-container>
+
+          <!-- If on register page, don't show register button; only show sign in -->
+          <ng-container *ngIf="url.includes('/auth/register')">
+            <a routerLink="/auth/login" (click)="closeMobileMenu()" class="btn btn-primary btn-sm">Sign In</a>
+          </ng-container>
+
+          <!-- If on home or any other guest page, show both cleanly -->
+          <ng-container *ngIf="!url.includes('/auth/login') && !url.includes('/auth/register')">
+            <a routerLink="/auth/login" (click)="closeMobileMenu()" class="btn btn-outline btn-sm">Sign In</a>
+            <a routerLink="/auth/register" (click)="closeMobileMenu()" class="btn btn-primary btn-sm">Register</a>
+          </ng-container>
+        </ng-template>
+      </div>
+    </div>
+
+    <!-- Mobile Hamburger Toggle -->
+    <button class="hamburger" (click)="toggleMobileMenu()" aria-label="Toggle Navigation">
+      <span class="bar"></span>
+      <span class="bar"></span>
+      <span class="bar"></span>
+    </button>
+  </div>
+</nav>

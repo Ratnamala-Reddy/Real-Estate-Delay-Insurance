@@ -1,0 +1,210 @@
+<div class="container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Automated Underwriting & Risk Engine</h1>
+      <p class="page-subtitle">
+        Straight-Through Risk Intelligence & AI-Driven Multiplier Assessment for App #{{ applicationId }}
+        <span *ngIf="application" class="app-sub-meta"> — {{ application.projectName }} ({{ application.builderName }})</span>
+      </p>
+    </div>
+    <div class="header-actions">
+      <span *ngIf="application" class="badge" [ngClass]="{
+        'badge-success': application.status === 'VERIFIED',
+        'badge-warning': application.status === 'SUBMITTED' || application.status === 'VERIFICATION_IN_PROGRESS',
+        'badge-neutral': application.status === 'DRAFT'
+      }">Application Status: {{ application.status }}</span>
+      <a [routerLink]="['/applications', applicationId]" class="btn btn-outline">Back to Application</a>
+    </div>
+  </div>
+
+  <!-- Eligibility Warning for Admin -->
+  <div *ngIf="application && application.status !== 'VERIFIED'" class="status-warning-banner">
+    <div class="warning-icon">⚠️</div>
+    <div class="warning-text">
+      <strong>Application Verification Required:</strong>
+      This application is currently in <strong>{{ application.status }}</strong> status. The Risk Assessment engine requires applications to be <strong>VERIFIED</strong> by underwriting legal checks before risk evaluation.
+    </div>
+    <a [routerLink]="['/verifications/process', applicationId]" class="btn btn-warning-action">
+      Go to Verification Queue &rarr;
+    </a>
+  </div>
+
+  <div class="stp-dashboard-grid">
+    <!-- Left Column: Executive Decision Center -->
+    <div class="executive-panel">
+      <!-- Live Persisted Assessment Output (if exists in backend) -->
+      <div class="card result-card" *ngIf="assessment$ | async as a; else previewResult">
+        <div class="stp-card-header">
+          <span class="stp-badge-pulse">● Live Backend Assessment</span>
+          <span class="badge badge-info">{{ a.status }}</span>
+        </div>
+
+        <div class="result-banner" [ngClass]="{
+          'banner-low': a.riskCategory === 'LOW',
+          'banner-med': a.riskCategory === 'MEDIUM',
+          'banner-high': a.riskCategory === 'HIGH'
+        }">
+          <div class="cat-title">{{ a.riskCategory }} RISK</div>
+          <div class="score-display">Underwriting Score: <strong>{{ a.riskScore }}/100</strong></div>
+          <div class="multiplier-display">Premium Multiplier: <strong>{{ a.premiumMultiplier }}x</strong></div>
+        </div>
+
+        <div class="result-details">
+          <p><strong>Assessment ID:</strong> {{ a.assessmentId }}</p>
+          <p><strong>Underwriting Officer:</strong> {{ a.assessedBy }}</p>
+          <p><strong>Evaluation Timestamp:</strong> {{ a.assessedAt | date:'medium' }}</p>
+          <p *ngIf="a.remarks" class="remarks-box"><em>"{{ a.remarks }}"</em></p>
+        </div>
+
+        <div class="decision-actions" *ngIf="a.status === 'PENDING'">
+          <button class="btn btn-success btn-lg btn-block" (click)="onApprove(a.assessmentId)" [disabled]="loading$ | async">
+            ✓ Finalize & Approve Risk Rating
+          </button>
+          <button class="btn btn-danger btn-block" (click)="onDecline(a.assessmentId)" [disabled]="loading$ | async">
+            ✕ Decline Rating
+          </button>
+        </div>
+
+        <div class="decision-actions" *ngIf="a.status === 'APPROVED'">
+          <a [routerLink]="['/quotes/applications', a.applicationId]" class="btn btn-primary btn-lg btn-block">
+            View & Manage Policy Quotes &rarr;
+          </a>
+        </div>
+      </div>
+
+      <!-- Auto-Derived System Preview (Before submission to backend) -->
+      <ng-template #previewResult>
+        <div class="card result-card" *ngIf="systemSummary as s">
+          <div class="stp-card-header">
+            <span class="stp-badge-pulse">⚡ Automated System Evaluation</span>
+            <span class="badge badge-success">{{ s.confidencePercent }}% Confidence</span>
+          </div>
+
+          <div class="result-banner" [ngClass]="{
+            'banner-low': s.category === 'LOW',
+            'banner-med': s.category === 'MEDIUM',
+            'banner-high': s.category === 'HIGH'
+          }">
+            <div class="cat-title">{{ s.category }} RISK</div>
+            <div class="score-display">Evaluated Score: <strong>{{ s.overallScore }}/100</strong></div>
+            <div class="multiplier-display">Recommended Multiplier: <strong>{{ s.multiplier }}x</strong></div>
+          </div>
+
+          <div class="auto-decision-box">
+            <p class="auto-note">
+              System has synthesized project metadata, construction handover timelines, and legal document submissions. No manual adjustments needed.
+            </p>
+
+            <button type="button" class="btn btn-success btn-lg btn-block" (click)="onOneClickApprove()" [disabled]="(loading$ | async) || !application || application.status !== 'VERIFIED'">
+              ✓ Approve & Generate Policy Quotes &rarr;
+            </button>
+
+            <button type="button" class="btn btn-outline btn-block btn-toggle-override" (click)="toggleOverride()">
+              {{ isOverrideMode ? '▲ Hide Manual Adjustments' : '⚙️ Advanced: Override Scores Manually' }}
+            </button>
+          </div>
+        </div>
+      </ng-template>
+
+      <!-- Collapsible Manual Override Drawer -->
+      <div class="card override-card" *ngIf="isOverrideMode">
+        <div class="override-header">
+          <h4 class="override-title">⚙️ Manual Underwriter Factor Override</h4>
+          <p class="override-sub">Adjust specific scoring metrics only if exceptional non-public risk factors exist.</p>
+        </div>
+
+        <form [formGroup]="riskForm" (ngSubmit)="onOneClickApprove()">
+          <div class="form-group">
+            <label class="form-label" for="assessedBy">Underwriter Officer / Audit Signature</label>
+            <input id="assessedBy" type="text" formControlName="assessedBy" class="form-control" />
+          </div>
+
+          <div class="sliders-grid">
+            <div class="form-group slider-group">
+              <div class="slider-label-row">
+                <label class="form-label">Builder Track Record</label>
+                <span class="score-badge">{{ riskForm.get('builderScore')?.value }}/100</span>
+              </div>
+              <input type="range" min="0" max="100" formControlName="builderScore" class="form-range" />
+            </div>
+
+            <div class="form-group slider-group">
+              <div class="slider-label-row">
+                <label class="form-label">Financial Solvency</label>
+                <span class="score-badge">{{ riskForm.get('financialScore')?.value }}/100</span>
+              </div>
+              <input type="range" min="0" max="100" formControlName="financialScore" class="form-range" />
+            </div>
+
+            <div class="form-group slider-group">
+              <div class="slider-label-row">
+                <label class="form-label">Construction Progress</label>
+                <span class="score-badge">{{ riskForm.get('projectProgressScore')?.value }}/100</span>
+              </div>
+              <input type="range" min="0" max="100" formControlName="projectProgressScore" class="form-range" />
+            </div>
+
+            <div class="form-group slider-group">
+              <div class="slider-label-row">
+                <label class="form-label">Location / Micro-Market</label>
+                <span class="score-badge">{{ riskForm.get('locationScore')?.value }}/100</span>
+              </div>
+              <input type="range" min="0" max="100" formControlName="locationScore" class="form-range" />
+            </div>
+
+            <div class="form-group slider-group">
+              <div class="slider-label-row">
+                <label class="form-label">Statutory Approvals</label>
+                <span class="score-badge">{{ riskForm.get('approvalScore')?.value }}/100</span>
+              </div>
+              <input type="range" min="0" max="100" formControlName="approvalScore" class="form-range" />
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-block" [disabled]="riskForm.invalid || (loading$ | async)">
+            Apply Overrides & Calculate
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Right Column: System Evidence & Factor Audit Rationale -->
+    <div class="evidence-panel">
+      <div class="card analysis-card">
+        <div class="evidence-header">
+          <h3 class="card-title">Underwriting Factor Rationale & Evidence</h3>
+          <span class="badge badge-neutral">5 Pillars Evaluated</span>
+        </div>
+
+        <div class="factor-list" *ngIf="analysisFactors.length > 0">
+          <div *ngFor="let f of analysisFactors" class="factor-item">
+            <div class="factor-header">
+              <div>
+                <span class="factor-name">{{ f.factor }}</span>
+                <span class="factor-weight text-muted"> (Weight: {{ f.weight }}%)</span>
+              </div>
+              <div class="factor-tags">
+                <span class="factor-score-pill">{{ f.score }}/100</span>
+                <span class="badge" [ngClass]="{
+                  'badge-success': f.badgeType === 'success',
+                  'badge-warning': f.badgeType === 'warning',
+                  'badge-info': f.badgeType === 'info'
+                }">{{ f.badge }}</span>
+              </div>
+            </div>
+
+            <div class="factor-progress-bar">
+              <div class="progress-fill" [style.width.%]="f.score" [ngClass]="{
+                'fill-high': f.score >= 80,
+                'fill-med': f.score >= 50 && f.score < 80,
+                'fill-low': f.score < 50
+              }"></div>
+            </div>
+
+            <p class="factor-rationale">{{ f.rationale }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

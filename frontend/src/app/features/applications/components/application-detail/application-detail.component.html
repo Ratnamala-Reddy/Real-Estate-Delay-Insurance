@@ -1,0 +1,105 @@
+<div class="container" *ngIf="application$ | async as app">
+  <div class="page-header">
+    <div>
+      <div class="id-badge">Application #{{ app.applicationId }}</div>
+      <h1 class="page-title">{{ app.projectName }} - Unit {{ app.unitNumber }}</h1>
+      <p class="page-subtitle">Developer: {{ app.builderName }}</p>
+    </div>
+    <div class="header-actions">
+      <span class="badge" [ngClass]="{
+        'badge-neutral': app.status === 'DRAFT',
+        'badge-info': app.status === 'SUBMITTED' || app.status === 'VERIFICATION_IN_PROGRESS',
+        'badge-warning': app.status === 'ADDITIONAL_INFORMATION_REQUIRED',
+        'badge-success': app.status === 'VERIFIED',
+        'badge-danger': app.status === 'REJECTED' || app.status === 'WITHDRAWN'
+      }">{{ app.status }}</span>
+
+      <button *ngIf="app.status === 'DRAFT'" (click)="onSubmitApplication()" class="btn btn-success">
+        Submit for Underwriting
+      </button>
+
+      <button *ngIf="app.status === 'DRAFT' || app.status === 'SUBMITTED'" (click)="onWithdraw()" class="btn btn-outline btn-danger-text">
+        Withdraw
+      </button>
+
+      <a *ngIf="app.status === 'VERIFIED'" [routerLink]="['/quotes/applications', app.applicationId]" class="btn btn-primary">
+        View Quote Offers & Plans &rarr;
+      </a>
+    </div>
+  </div>
+
+  <div class="detail-grid">
+    <div class="card detail-card">
+      <h3 class="card-title">Property Details</h3>
+      <div class="data-grid">
+        <div class="data-item">
+          <label>Builder Name</label>
+          <p>{{ app.builderName }}</p>
+        </div>
+        <div class="data-item">
+          <label>Project Name</label>
+          <p>{{ app.projectName }}</p>
+        </div>
+        <div class="data-item">
+          <label>Unit / Flat No.</label>
+          <p>{{ app.unitNumber }}</p>
+        </div>
+        <div class="data-item">
+          <label>Property Value</label>
+          <p class="val-highlight">₹{{ app.propertyValue | number }}</p>
+        </div>
+        <div class="data-item">
+          <label>Purchase Date</label>
+          <p>{{ app.purchaseDate | date:'mediumDate' }}</p>
+        </div>
+        <div class="data-item">
+          <label>Promised Handover Date</label>
+          <p>{{ app.promisedPossessionDate | date:'mediumDate' }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Verification / Risk Shortcut for Admin -->
+    <div class="card detail-card" *ngIf="(userRole$ | async) === 'ADMIN'">
+      <h3 class="card-title">Admin Underwriting Actions</h3>
+      <p class="desc-text">Perform legal verification, factor risk evaluation, and generate custom quotes.</p>
+      <div class="admin-quick-links">
+        <a [routerLink]="['/verifications/process', app.applicationId]" class="btn btn-outline">Underwrite & Verify Property</a>
+        <a [routerLink]="['/risk/calculator', app.applicationId]" class="btn btn-outline">Run Multi-Factor Risk Assessment</a>
+        <a [routerLink]="['/quotes/applications', app.applicationId]" class="btn btn-primary">View & Manage Policy Quotes &rarr;</a>
+      </div>
+    </div>
+
+    <!-- Documents Section -->
+    <div class="card detail-card full-width">
+      <h3 class="card-title">Attached Verification Documents</h3>
+      
+      <div class="docs-list" *ngIf="documents$ | async as docs">
+        <div *ngIf="docs.length === 0" class="no-docs">No documents attached yet.</div>
+        <div *ngFor="let doc of docs" class="doc-item">
+          <div class="doc-icon">📄</div>
+          <div class="doc-meta">
+            <div class="doc-name">{{ doc.fileName }}</div>
+            <div class="doc-type">{{ doc.documentType }} • Status: <span class="badge badge-neutral">{{ doc.reviewStatus }}</span></div>
+          </div>
+          <span class="doc-path">{{ doc.filePath }}</span>
+        </div>
+      </div>
+
+      <div class="upload-section" *ngIf="app.status === 'DRAFT' || app.status === 'ADDITIONAL_INFORMATION_REQUIRED'">
+        <h4 class="upload-title">Attach New Supporting Document</h4>
+        <form [formGroup]="docForm" (ngSubmit)="onUploadDoc()" class="doc-form">
+          <select formControlName="documentType" class="form-control">
+            <option value="PURCHASE_AGREEMENT">Builder Buyer Agreement</option>
+            <option value="PAYMENT_RECEIPTS">Allotment Letter / Receipts</option>
+            <option value="RERA_REGISTRATION">RERA Project Document</option>
+            <option value="SANCTION_PLAN">Approved Sanction Plan</option>
+          </select>
+          <input type="text" formControlName="fileName" placeholder="File Name (e.g. Agreement.pdf)" class="form-control" />
+          <input type="text" formControlName="filePath" placeholder="File Storage Path / URI" class="form-control" />
+          <button type="submit" class="btn btn-secondary" [disabled]="docForm.invalid">Add Document</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

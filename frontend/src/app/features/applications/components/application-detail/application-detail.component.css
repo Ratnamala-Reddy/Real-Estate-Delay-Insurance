@@ -1,0 +1,138 @@
+.id-badge {
+  font-size: 0.8rem;
+  color: var(--slate-500);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.btn-danger-text {
+  color: var(--danger);
+  border-color: #fca5a5;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.full-width {
+  grid-column: 1 / -1;
+}
+
+.card-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--slate-900);
+  margin-bottom: 1.25rem;
+}
+
+.data-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.data-item label {
+  font-size: 0.75rem;
+  color: var(--slate-500);
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.data-item p {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--slate-800);
+  margin-top: 0.2rem;
+}
+
+.val-highlight {
+  color: var(--primary) !important;
+  font-size: 1.1rem !important;
+}
+
+.admin-quick-links {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.desc-text {
+  font-size: 0.85rem;
+  color: var(--slate-600);
+}
+
+.docs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.doc-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: var(--slate-50);
+  border: 1px solid var(--slate-200);
+  border-radius: var(--radius-sm);
+}
+
+.doc-icon {
+  font-size: 1.25rem;
+}
+
+.doc-meta {
+  flex: 1;
+}
+
+.doc-name {
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.doc-type {
+  font-size: 0.75rem;
+  color: var(--slate-500);
+}
+
+.doc-path {
+  font-size: 0.75rem;
+  color: var(--slate-400);
+  font-family: monospace;
+}
+
+.upload-section {
+  border-top: 1px solid var(--slate-200);
+  padding-top: 1.25rem;
+}
+
+.upload-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+}
+
+.doc-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr auto;
+  gap: 0.75rem;
+}
+
+@media (max-width: 768px) {
+  .detail-grid {
+    grid-template-columns: 1fr;
+  }
+  .doc-form {
+    grid-template-columns: 1fr;
+  }
+}

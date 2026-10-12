@@ -1,0 +1,152 @@
+<div class="container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Underwriting & Verification Queue</h1>
+      <p class="page-subtitle">Review, legal title check, and property verification for insurance applications</p>
+    </div>
+  </div>
+
+  <!-- Alert to Admin when pending users exist -->
+  <div *ngIf="pendingUsersCount > 0" class="alert alert-warning user-pending-alert mb-4">
+    <div class="alert-icon">⚠️</div>
+    <div class="alert-body">
+      <strong>Action Required: Unverified Applicant Accounts Detected</strong>
+      <p>There are <strong>{{ pendingUsersCount }}</strong> application(s) from new buyer(s) whose user accounts are currently <strong>PENDING_VERIFICATION</strong>. Please activate user accounts before approving underwriting verification.</p>
+    </div>
+    <a routerLink="/admin/users" class="btn btn-warning btn-sm">Go to User Management &rarr;</a>
+  </div>
+
+  <!-- Queue Filter Tabs -->
+  <div class="queue-tabs">
+    <button class="tab-btn" [class.active]="activeTab === 'ALL'" (click)="setTab('ALL')">
+      All Applications
+      <span class="tab-badge" *ngIf="totalCount$ | async as c">{{ c }}</span>
+    </button>
+    <button class="tab-btn" [class.active]="activeTab === 'PENDING'" (click)="setTab('PENDING')">
+      Pending Underwriting
+      <span class="tab-badge badge-warn" *ngIf="pendingCount$ | async as c">{{ c }}</span>
+    </button>
+    <button class="tab-btn" [class.active]="activeTab === 'VERIFIED'" (click)="setTab('VERIFIED')">
+      Verified & Approved
+      <span class="tab-badge badge-success" *ngIf="verifiedCount$ | async as c">{{ c }}</span>
+    </button>
+    <button class="tab-btn" [class.active]="activeTab === 'DRAFT'" (click)="setTab('DRAFT')">
+      Drafts
+      <span class="tab-badge" *ngIf="draftCount$ | async as c">{{ c }}</span>
+    </button>
+  </div>
+
+  <div *ngIf="loading$ | async" class="loading-state">
+    <p>Loading application and verification records...</p>
+  </div>
+
+  <ng-container *ngIf="filteredApplications$ | async as list">
+    <div *ngIf="list.length === 0 && !(loading$ | async)" class="card empty-state" style="text-align: center; padding: 3rem 1.5rem;">
+      <h3>No Applications Found in Selected Tab</h3>
+      <p *ngIf="activeTab === 'PENDING'" style="color: var(--slate-500); margin-top: 0.5rem;">No applications currently waiting for underwriting. View "All Applications" tab to see drafts or completed items.</p>
+      <p *ngIf="activeTab !== 'PENDING'" style="color: var(--slate-500); margin-top: 0.5rem;">No records available for this filter.</p>
+    </div>
+
+    <!-- Underwriting Table View -->
+    <div *ngIf="list.length > 0" class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Application ID</th>
+            <th>Applicant / Account Status</th>
+            <th>Project & Unit</th>
+            <th>Builder</th>
+            <th>Property Value</th>
+            <th>Promised Handover</th>
+            <th>Application Status</th>
+            <th>Workflow Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of list">
+            <td><strong>{{ item.applicationId }}</strong></td>
+            <td>
+              <ng-container *ngIf="getUser(item.userId) as u; else userIdOnly">
+                <div style="font-weight: 600; font-size: 0.875rem;">{{ (u.firstName + ' ' + (u.lastName || '')) || u.email }}</div>
+                <small class="text-muted">{{ u.email }}</small>
+                <div style="margin-top: 0.25rem;">
+                  <span *ngIf="u.status === 'PENDING_VERIFICATION'" class="badge badge-warning" style="font-size: 0.725rem;">
+                    ⚠️ PENDING_VERIFICATION
+                  </span>
+                  <span *ngIf="u.status === 'ACTIVE'" class="badge badge-success" style="font-size: 0.725rem;">
+                    ✓ ACTIVE
+                  </span>
+                  <span *ngIf="u.status === 'SUSPENDED'" class="badge badge-danger" style="font-size: 0.725rem;">
+                    ✕ SUSPENDED
+                  </span>
+                </div>
+              </ng-container>
+              <ng-template #userIdOnly>
+                <small class="text-muted">User ID: #{{ item.userId }}</small>
+              </ng-template>
+            </td>
+            <td>
+              <div class="project-name" style="font-weight: 600;">{{ item.projectName }}</div>
+              <small class="text-muted">Unit: {{ item.unitNumber }}</small>
+            </td>
+            <td>{{ item.builderName }}</td>
+            <td>₹{{ item.propertyValue | number }}</td>
+            <td>{{ item.promisedPossessionDate | date:'mediumDate' }}</td>
+            <td>
+              <span class="badge" [ngClass]="{
+                'badge-neutral': item.status === 'DRAFT',
+                'badge-info': item.status === 'SUBMITTED' || item.status === 'VERIFICATION_IN_PROGRESS',
+                'badge-warning': item.status === 'ADDITIONAL_INFORMATION_REQUIRED',
+                'badge-success': item.status === 'VERIFIED',
+                'badge-danger': item.status === 'REJECTED' || item.status === 'WITHDRAWN'
+              }">{{ item.status }}</span>
+            </td>
+            <td>
+              <div style="display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap;">
+                <!-- If user is pending, show quick activate button -->
+                <button 
+                  *ngIf="isUserPending(item.userId)"
+                  type="button" 
+                  class="btn btn-warning btn-sm" 
+                  (click)="onActivateUser(item.userId, $event)"
+                  title="Activate unverified user account">
+                  ⚡ Activate User
+                </button>
+
+                <!-- Workflow Buttons based on status -->
+                <a *ngIf="item.status === 'SUBMITTED' || item.status === 'VERIFICATION_IN_PROGRESS' || item.status === 'ADDITIONAL_INFORMATION_REQUIRED'"
+                   [routerLink]="['/verifications/process', item.applicationId]"
+                   class="btn btn-primary btn-sm">
+                  Underwrite & Verify &rarr;
+                </a>
+
+                <div *ngIf="item.status === 'VERIFIED'" style="display: flex; gap: 0.4rem; align-items: center;">
+                  <a [routerLink]="['/risk/calculator', item.applicationId]"
+                     class="btn btn-outline btn-sm">
+                    Risk Engine
+                  </a>
+                  <a [routerLink]="['/quotes/applications', item.applicationId]"
+                     class="btn btn-primary btn-sm">
+                    Quotes &rarr;
+                  </a>
+                </div>
+
+                <a *ngIf="item.status === 'DRAFT'"
+                   [routerLink]="['/applications', item.applicationId]"
+                   class="btn btn-outline btn-sm">
+                  View Draft &rarr;
+                </a>
+
+                <a *ngIf="item.status === 'REJECTED' || item.status === 'WITHDRAWN'"
+                   [routerLink]="['/applications', item.applicationId]"
+                   class="btn btn-outline btn-sm">
+                  Details &rarr;
+                </a>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </ng-container>
+</div>

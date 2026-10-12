@@ -1,0 +1,309 @@
+<div class="container" *ngIf="policy$ | async as p">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Policy Certificate: {{ p.policyNumber }}</h1>
+      <p class="page-subtitle">Underwritten by Real Estate Project Delay Insurance Platform</p>
+    </div>
+    <div class="header-actions">
+      <a routerLink="/claims/new" [queryParams]="{ policyId: p.policyId }" class="btn btn-danger">File Delay Claim</a>
+      <a routerLink="/policies" class="btn btn-outline">Back to Policies</a>
+    </div>
+  </div>
+
+  <!-- 8-Stage Insurance Lifecycle Navigation Tabs -->
+  <div class="lifecycle-nav mb-4">
+    <button class="lifecycle-tab" [class.active]="activeTab === 'certificate'" (click)="activeTab = 'certificate'">
+      📜 4. Policy Issuance
+    </button>
+    <button class="lifecycle-tab" [class.active]="activeTab === 'lifecycle'" (click)="activeTab = 'lifecycle'">
+      🔄 Insurance Lifecycle Flow (Stages 1-8)
+    </button>
+    <button class="lifecycle-tab" [class.active]="activeTab === 'servicing'" (click)="activeTab = 'servicing'">
+      ✍️ 6. Policy Servicing
+    </button>
+    <button class="lifecycle-tab" [class.active]="activeTab === 'manage'" (click)="activeTab = 'manage'">
+      ⚙️ 8. Renewal / Cancellation
+    </button>
+  </div>
+
+  <!-- TAB 1: Policy Certificate -->
+  <div *ngIf="activeTab === 'certificate'" class="certificate-card card">
+    <div class="cert-header">
+      <div>
+        <div class="cert-title">PROJECT DELAY INDEMNITY BOND</div>
+        <p class="text-muted mb-0" style="font-size: 0.85rem;">Official Digital Underwriting Certificate & Bond Document</p>
+      </div>
+      <div class="badge badge-success">{{ p.policyStatus }}</div>
+    </div>
+
+    <div class="cert-grid">
+      <div class="cert-field">
+        <label>Policy ID</label>
+        <p><code>{{ p.policyId }}</code></p>
+      </div>
+      <div class="cert-field">
+        <label>Application ID</label>
+        <p><a [routerLink]="['/applications', p.applicationId]">{{ p.applicationId }}</a></p>
+      </div>
+      <div class="cert-field">
+        <label>Total Coverage Amount</label>
+        <p class="highlight">₹{{ p.coverageAmount | number }}</p>
+      </div>
+      <div class="cert-field">
+        <label>Escrow Premium Paid</label>
+        <p>₹{{ p.premiumAmount | number }}</p>
+      </div>
+      <div class="cert-field">
+        <label>Inception Date</label>
+        <p>{{ p.startDate | date:'mediumDate' }}</p>
+      </div>
+      <div class="cert-field">
+        <label>Expiry / Handover Term</label>
+        <p>{{ p.endDate | date:'mediumDate' }}</p>
+      </div>
+    </div>
+
+    <div class="cert-footer mt-4 pt-3" style="border-top: 1px dashed #cbd5e1; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+      <div style="font-size: 0.85rem; color: #64748b;">
+        🔒 Digitally Signed & Locked in Smart Escrow. All delay claims are adjudicated against this verified bond.
+      </div>
+      <div style="display: flex; gap: 0.75rem;">
+        <a [routerLink]="['/payments/history']" class="btn btn-outline btn-sm">View Escrow Ledger</a>
+        <a [routerLink]="['/claims/new']" [queryParams]="{ policyId: p.policyId }" class="btn btn-danger btn-sm">Report Delay Claim</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 2: Full 8-Stage Insurance Lifecycle Visualization -->
+  <div *ngIf="activeTab === 'lifecycle'" class="card p-4">
+    <h3 class="card-title mb-2">Insurance Lifecycle — Complete Flow Tracker</h3>
+    <p class="text-muted mb-4">Complete end-to-end journey of this policy through all 8 actuarial insurance stages:</p>
+
+    <div class="lifecycle-timeline">
+      <!-- Step 1 -->
+      <div class="timeline-step completed">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <div class="step-header">
+            <h4>Customer Acquisition</h4>
+            <span class="badge badge-success">Completed</span>
+          </div>
+          <p><strong>Actor:</strong> Customer (Buyer), Broker/Agent</p>
+          <p class="step-desc">Customer registered interest, specified flat details (Property Value, Unit, Handover Date), uploaded statutory documents (RERA, Agreement, Receipts), and submitted application #{{ p.applicationId }}.</p>
+        </div>
+      </div>
+
+      <!-- Step 2 -->
+      <div class="timeline-step completed">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <div class="step-header">
+            <h4>Underwriting — Risk Assessment</h4>
+            <span class="badge badge-success">Completed</span>
+          </div>
+          <p><strong>Actor:</strong> Underwriting Team</p>
+          <p class="step-desc">Underwriter verified title documents, analyzed 5 risk factors (RERA Approvals 25%, Builder Solvency 25%, Progress 20%, Solvency 15%, Location 15%), derived Delay Risk Score, and approved coverage.</p>
+        </div>
+      </div>
+
+      <!-- Step 3 -->
+      <div class="timeline-step completed">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <div class="step-header">
+            <h4>Rating and Quotation</h4>
+            <span class="badge badge-success">Completed</span>
+          </div>
+          <p><strong>Actor:</strong> Rating Engine / Actuary, Underwriter</p>
+          <p class="step-desc">The dynamic pricing engine calculated 3-tier quotes (Basic, Standard, Premium) based directly on the assessed risk multiplier and property asset value. Quotes presented for buyer review.</p>
+        </div>
+      </div>
+
+      <!-- Step 4 -->
+      <div class="timeline-step completed">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <div class="step-header">
+            <h4>Policy Issuance</h4>
+            <span class="badge badge-success">Active Policy Issued</span>
+          </div>
+          <p><strong>Actor:</strong> Policy Administration Team, Underwriter</p>
+          <p class="step-desc">Quote accepted by customer, policy {{ p.policyNumber }} generated and legally bound with ₹{{ p.coverageAmount | number }} total delay indemnity protection.</p>
+        </div>
+      </div>
+
+      <!-- Step 5 -->
+      <div class="timeline-step completed">
+        <div class="step-num">5</div>
+        <div class="step-body">
+          <div class="step-header">
+            <h4>Premium Billing and Payment</h4>
+            <span class="badge badge-success">Paid via Escrow</span>
+          </div>
+          <p><strong>Actor:</strong> Billing & Escrow Finance Team</p>
+          <p class="step-desc">Premium payment (₹{{ p.premiumAmount | number }}) processed into protected Escrow ledger. Updated payment records confirm zero outstanding balance.</p>
+        </div>
+      </div>
+
+      <!-- Step 6 -->
+      <div class="timeline-step active">
+        <div class="step-num">6</div>
+        <div class="step-body">
+          <div class="step-header">
+            <h4>Policy Servicing</h4>
+            <span class="badge badge-info">In Service</span>
+          </div>
+          <p><strong>Actor:</strong> Customer Service Team, Policy Admin, Policyholder</p>
+          <p class="step-desc">Customer can request endorsements (address changes, nominee updates, bank account for payout disbursement, or coverage adjustments). Records updated with endorsement logs.</p>
+          <button class="btn btn-outline btn-sm mt-2" (click)="activeTab = 'servicing'">Request Policy Endorsement &rarr;</button>
+        </div>
+      </div>
+
+      <!-- Step 7 -->
+      <div class="timeline-step">
+        <div class="step-num">7</div>
+        <div class="step-body">
+          <div class="step-header">
+            <h4>Claims Management</h4>
+            <span class="badge badge-neutral">Standby / Available</span>
+          </div>
+          <p><strong>Actor:</strong> Claims Adjuster, Claims Examiner, Claims Manager</p>
+          <p class="step-desc">Triggered if builder delays possession beyond promised handover date. Customer files claim &rarr; Validation &rarr; Investigation &rarr; Delay calculation &rarr; Adjudication decision &rarr; Compensation payment settlement &rarr; Closure.</p>
+          <a [routerLink]="['/claims/new']" [queryParams]="{ policyId: p.policyId }" class="btn btn-danger btn-sm mt-2">File Claim Now &rarr;</a>
+        </div>
+      </div>
+
+      <!-- Step 8 -->
+      <div class="timeline-step">
+        <div class="step-num">8</div>
+        <div class="step-body">
+          <div class="step-header">
+            <h4>Renewal or Cancellation</h4>
+            <span class="badge badge-neutral">Manageable</span>
+          </div>
+          <p><strong>Actor:</strong> Renewal Team, Underwriter, Customer</p>
+          <p class="step-desc">Before handover term expiry, offer extended terms or allow voluntary cancellation/closure under statutory rules.</p>
+          <button class="btn btn-outline btn-sm mt-2" (click)="activeTab = 'manage'">Manage Term or Cancellation &rarr;</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 3: Policy Servicing (Endorsements) -->
+  <div *ngIf="activeTab === 'servicing'" class="card p-4">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+      <div>
+        <h3 class="card-title mb-1">Stage 6: Policy Servicing & Endorsements</h3>
+        <p class="text-muted mb-0">Submit service requests to update your policy records, communication details, or beneficiary accounts.</p>
+      </div>
+    </div>
+
+    <form [formGroup]="endorsementForm" (ngSubmit)="onSubmitEndorsement()" class="mb-4 p-3" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;">
+      <h4 style="font-size: 1rem; margin-bottom: 1rem; color: #1e293b;">Submit New Policy Endorsement Request</h4>
+      
+      <div class="form-group mb-3">
+        <label class="form-label" for="endType">Endorsement Request Type</label>
+        <select id="endType" formControlName="endorsementType" class="form-control">
+          <option value="ADDRESS_CHANGE">Communication / Mailing Address Update</option>
+          <option value="NOMINEE_UPDATE">Co-Owner / Nominee Beneficiary Update</option>
+          <option value="BANK_ACCOUNT_UPDATE">Bank Account Update for Claim Payout Disbursement</option>
+          <option value="CONTACT_UPDATE">Email & Primary Phone Number Update</option>
+          <option value="COVERAGE_ENDORSEMENT">Coverage Rider / Construction Milestone Endorsement</option>
+        </select>
+      </div>
+
+      <div class="form-group mb-3">
+        <label class="form-label" for="endDetails">Endorsement Specifics & New Data</label>
+        <textarea id="endDetails" rows="3" formControlName="details" class="form-control" placeholder="Provide complete details (e.g. New Address: Apt 402, Green Heights, Bengaluru; or New Bank IFSC & Account Number)..."></textarea>
+      </div>
+
+      <button type="submit" class="btn btn-primary" [disabled]="endorsementForm.invalid">
+        Submit & Record Policy Endorsement
+      </button>
+    </form>
+
+    <h4 style="font-size: 1rem; margin-bottom: 1rem; color: #1e293b;">Policy Endorsements & Servicing History</h4>
+    <div *ngIf="endorsements.length === 0" class="text-muted">No endorsements recorded yet.</div>
+    <div class="endorsement-list" *ngIf="endorsements.length > 0">
+      <div *ngFor="let end of endorsements" class="endorsement-item card mb-2 p-3">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+          <div>
+            <strong>{{ end.type }}</strong>
+            <span class="text-muted" style="font-size: 0.8rem; margin-left: 0.75rem;">Ref: {{ end.id }}</span>
+          </div>
+          <span class="badge badge-success">{{ end.status }}</span>
+        </div>
+        <p style="margin: 0; font-size: 0.9rem; color: #334155;">{{ end.details }}</p>
+        <div style="font-size: 0.75rem; color: #94a3b8; margin-top: 0.5rem;">
+          Recorded: {{ end.effectiveDate | date:'medium' }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 4: Stage 8: Renewal or Cancellation -->
+  <div *ngIf="activeTab === 'manage'" class="card p-4">
+    <h3 class="card-title mb-2">Stage 8: Policy Renewal or Cancellation</h3>
+    <p class="text-muted mb-4">Manage policy term extensions or statutory policy cancellation:</p>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
+      <!-- Renewal Option -->
+      <div class="card p-3" style="border: 1px solid #bfdbfe; background: #eff6ff;">
+        <h4 style="color: #1e40af; margin-bottom: 0.5rem;">🔄 Policy Term Renewal / Extension</h4>
+        <p style="font-size: 0.85rem; color: #1e3a8a; margin-bottom: 1rem;">
+          If project possession is extended under revised RERA schedules, extend your delay coverage term by an additional 12 months with continuous escrow protection.
+        </p>
+        <button class="btn btn-primary" (click)="openRenewModal()" [disabled]="p.policyStatus !== 'ACTIVE'">
+          Request Policy Extension (+12 Months)
+        </button>
+      </div>
+
+      <!-- Cancellation Option -->
+      <div class="card p-3" style="border: 1px solid #fecaca; background: #fef2f2;">
+        <h4 style="color: #991b1b; margin-bottom: 0.5rem;">🛑 Policy Cancellation / Closure</h4>
+        <p style="font-size: 0.85rem; color: #7f1d1d; margin-bottom: 1rem;">
+          If the property transaction was cancelled or possession has been successfully handed over, close or terminate the indemnity bond under policy terms.
+        </p>
+        <button class="btn btn-danger" (click)="openCancelModal()" [disabled]="p.policyStatus === 'CLOSED' || p.policyStatus === 'CANCELLED'">
+          {{ p.policyStatus === 'CLOSED' ? 'Policy Already Closed' : 'Cancel / Close Policy' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Confirm Cancellation -->
+  <div class="modal-backdrop" *ngIf="showCancelModal">
+    <div class="modal-dialog">
+      <div class="modal-content card p-4">
+        <h3 class="modal-title" style="color: #991b1b;">Confirm Policy Cancellation</h3>
+        <p style="color: #475569; margin: 1rem 0;">
+          Are you sure you want to cancel and close policy <strong>{{ p.policyNumber }}</strong>? Once closed, no further delay claims can be filed under this indemnity bond.
+        </p>
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+          <button class="btn btn-outline" (click)="closeCancelModal()" [disabled]="actionLoading">Go Back</button>
+          <button class="btn btn-danger" (click)="confirmCancel()" [disabled]="actionLoading">
+            {{ actionLoading ? 'Processing...' : 'Confirm Closure' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Confirm Renewal -->
+  <div class="modal-backdrop" *ngIf="showRenewModal">
+    <div class="modal-dialog">
+      <div class="modal-content card p-4">
+        <h3 class="modal-title" style="color: #1e40af;">Confirm Policy Term Renewal</h3>
+        <p style="color: #475569; margin: 1rem 0;">
+          Confirm extending policy <strong>{{ p.policyNumber }}</strong> by +12 months under active underwriting rules?
+        </p>
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+          <button class="btn btn-outline" (click)="closeRenewModal()" [disabled]="actionLoading">Cancel</button>
+          <button class="btn btn-primary" (click)="confirmRenew()" [disabled]="actionLoading">
+            {{ actionLoading ? 'Processing...' : 'Confirm Extension' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,48 @@
+<div class="container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Buyer Profile & Security</h1>
+      <p class="page-subtitle">Manage your verified contact info and platform credentials</p>
+    </div>
+  </div>
+
+  <div class="profile-layout" *ngIf="currentUser$ | async as user">
+    <div class="card profile-card">
+      <div class="profile-header-info">
+        <div class="avatar">{{ user.firstName ? user.firstName.charAt(0) : '' }}{{ user.lastName ? user.lastName.charAt(0) : '' }}</div>
+        <div>
+          <h2 class="user-fullname">{{ user.firstName }} {{ user.lastName }}</h2>
+          <p class="user-email">{{ user.email }}</p>
+          <div class="badges-row">
+            <span class="badge badge-primary">Role: {{ user.role }}</span>
+            <span class="badge badge-success">Status: {{ user.status }}</span>
+          </div>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <form [formGroup]="profileForm" (ngSubmit)="onSubmit()">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="profFirstName">First Name</label>
+            <input id="profFirstName" type="text" formControlName="firstName" class="form-control" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="profLastName">Last Name</label>
+            <input id="profLastName" type="text" formControlName="lastName" class="form-control" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="profMobile">Registered Mobile Number</label>
+          <input id="profMobile" type="tel" formControlName="mobileNumber" class="form-control" maxlength="10" />
+        </div>
+
+        <button type="submit" class="btn btn-primary" [disabled]="(loading$ | async) || profileForm.invalid">
+          Save Profile Changes
+        </button>
+      </form>
+    </div>
+  </div>
+</div>

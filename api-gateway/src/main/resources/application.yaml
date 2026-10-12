@@ -1,0 +1,123 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: API-GATEWAY
+
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+
+            # Auth Service: register, login, logout
+            - id: auth-service
+              uri: lb://AUTH-SERVICE
+              predicates:
+                - Path=/api/v1/auth/**
+
+            # Auth Service: buyer/user endpoints
+            - id: auth-user-service
+              uri: lb://AUTH-SERVICE
+              predicates:
+                - Path=/api/v1/users/**
+
+            # Auth Service: admin endpoints
+            - id: auth-admin-service
+              uri: lb://AUTH-SERVICE
+              predicates:
+                - Path=/admin/**
+
+            # Application Service
+            - id: application-service
+              uri: lb://APPLICATION-SERVICE
+              predicates:
+                - Path=/api/v1/applications/**
+
+            # Verification Service
+            - id: verification-service
+              uri: lb://VERIFICATION-SERVICE
+              predicates:
+                - Path=/api/v1/verifications/**
+
+            # Risk Service
+            - id: risk-service
+              uri: lb://RISK-SERVICE
+              predicates:
+                - Path=/api/v1/risk-assessments/**
+
+            # Policy Service: short quotes path
+            - id: policy-quotes-short-service
+              uri: lb://POLICY-SERVICE
+              predicates:
+                - Path=/quotes/**
+
+            # Policy Service: quotes
+            - id: policy-quotes-service
+              uri: lb://POLICY-SERVICE
+              predicates:
+                - Path=/api/v1/quotes/**
+
+            # Policy Service: policies
+            - id: policy-service
+              uri: lb://POLICY-SERVICE
+              predicates:
+                - Path=/api/v1/policies, /api/v1/policies/**
+
+            # Payment Service: premium payments
+            - id: premium-payment-service
+              uri: lb://PAYMENT-SERVICE
+              predicates:
+                - Path=/api/v1/premium-payments, /api/v1/premium-payments/**
+
+            # Payment Service: compensation payments
+            - id: compensation-payment-service
+              uri: lb://PAYMENT-SERVICE
+              predicates:
+                - Path=/api/v1/compensation-payments, /api/v1/compensation-payments/**
+
+            # Payment Service: webhooks
+            - id: payment-webhook-service
+              uri: lb://PAYMENT-SERVICE
+              predicates:
+                - Path=/api/v1/payment-webhooks, /api/v1/payment-webhooks/**
+
+            # Claim Service
+            - id: claim-service
+              uri: lb://CLAIM-SERVICE
+              predicates:
+                - Path=/api/v1/claims, /api/v1/claims/**
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+
+  endpoint:
+    health:
+      show-details: always
+
+info:
+  app:
+    name: Gateway Service
+    version: 1.0
+    description: Gateway Microservice
+
+jwt:
+  secret: mySecretKeyForRealEstateProjectDelayInsurancePlatform2026SecureKey
+  expiration: 86400000
+
+logging:
+  level:
+    root: INFO
+    org.springframework.cloud.gateway: DEBUG
+    org.example.apigateway: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"

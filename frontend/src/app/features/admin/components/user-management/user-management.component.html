@@ -1,0 +1,57 @@
+<div class="container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">User Account Administration</h1>
+      <p class="page-subtitle">Activate, suspend, and review verified buyer credentials</p>
+    </div>
+  </div>
+
+  <div *ngIf="loading$ | async" class="loading-state">
+    <p>Loading registered accounts...</p>
+  </div>
+
+  <ng-container *ngIf="users$ | async as users">
+    <!-- User Management Table View -->
+    <div class="table-responsive" *ngIf="users.length > 0">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>User ID</th>
+            <th>Full Name</th>
+            <th>Email Address</th>
+            <th>Mobile</th>
+            <th>Role</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let u of users">
+            <td><code>{{ u.userId }}</code></td>
+            <td>
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <div style="width: 26px; height: 26px; border-radius: 50%; background: var(--primary); color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">
+                  {{ (u.firstName || 'U')[0] | uppercase }}
+                </div>
+                <strong>{{ u.firstName }} {{ u.lastName }}</strong>
+              </div>
+            </td>
+            <td>{{ u.email }}</td>
+            <td>{{ u.mobileNumber || 'N/A' }}</td>
+            <td><span class="badge badge-primary">{{ u.role }}</span></td>
+            <td>
+              <span class="badge" [ngClass]="u.status === 'ACTIVE' ? 'badge-success' : 'badge-danger'">
+                {{ u.status }}
+              </span>
+            </td>
+            <td>
+              <button class="btn btn-sm" [ngClass]="u.status === 'ACTIVE' ? 'btn-danger' : 'btn-success'" (click)="onToggleStatus(u.userId, u.status)">
+                {{ u.status === 'ACTIVE' ? 'Suspend' : 'Activate' }}
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </ng-container>
+</div>

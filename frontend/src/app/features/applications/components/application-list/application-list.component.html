@@ -1,0 +1,73 @@
+<div class="container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">My Insurance Applications</h1>
+      <p class="page-subtitle">Track underwriting progress, verification reviews, and quote offers</p>
+    </div>
+    <a routerLink="/applications/new" class="btn btn-primary">+ New Cover Application</a>
+  </div>
+
+  <div *ngIf="loading$ | async" class="loading-box">
+    <p>Loading your insurance applications...</p>
+  </div>
+
+  <ng-container *ngIf="applications$ | async as apps">
+    <div *ngIf="apps.length === 0 && !(loading$ | async)" class="card empty-state" style="text-align: center; padding: 3rem 1.5rem;">
+      <div class="empty-icon" style="font-size: 2.5rem; margin-bottom: 0.75rem;">📁</div>
+      <h3>No Active Insurance Applications</h3>
+      <p style="color: var(--slate-500); margin: 0.5rem 0 1.25rem 0;">Protect your home purchase against handover delays today.</p>
+      <a routerLink="/applications/new" class="btn btn-primary">Start New Application</a>
+    </div>
+
+    <!-- Cards Grid View -->
+    <div *ngIf="apps.length > 0" class="cards-grid mb-4">
+      <div *ngFor="let app of apps" class="entity-card">
+        <div>
+          <div class="entity-card-header">
+            <div>
+              <div class="entity-card-title">{{ app.projectName }}</div>
+              <div class="entity-card-subtitle">By {{ app.builderName }} &bull; Unit: {{ app.unitNumber }}</div>
+            </div>
+            <span class="badge" [ngClass]="{
+              'badge-neutral': app.status === 'DRAFT',
+              'badge-info': app.status === 'SUBMITTED' || app.status === 'VERIFICATION_IN_PROGRESS',
+              'badge-warning': app.status === 'ADDITIONAL_INFORMATION_REQUIRED',
+              'badge-success': app.status === 'VERIFIED',
+              'badge-danger': app.status === 'REJECTED' || app.status === 'WITHDRAWN'
+            }">{{ app.status }}</span>
+          </div>
+
+          <div class="entity-card-metrics">
+            <div class="metric-item">
+              <span class="metric-label">App ID</span>
+              <span class="metric-value"><code>{{ app.applicationId }}</code></span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">Property Value</span>
+              <span class="metric-value highlight">₹{{ app.propertyValue | number }}</span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">Promised Possession</span>
+              <span class="metric-value" style="font-size: 0.85rem;">{{ app.promisedPossessionDate | date:'mediumDate' }}</span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">Stage</span>
+              <span class="metric-value" style="font-size: 0.85rem;">
+                {{ app.status === 'VERIFIED' ? 'Quotes Ready' : 'Under Review' }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="entity-card-actions">
+          <a [routerLink]="['/applications', app.applicationId]" class="btn btn-outline btn-sm" style="flex: 1;">
+            View Details
+          </a>
+          <a *ngIf="app.status === 'VERIFIED'" [routerLink]="['/quotes/applications', app.applicationId]" class="btn btn-primary btn-sm" style="flex: 1;">
+            View Quotes &rarr;
+          </a>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+</div>

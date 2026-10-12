@@ -1,0 +1,155 @@
+<div class="container">
+  <!-- When a specific claim is loaded -->
+  <ng-container *ngIf="claim$ | async as c; else noClaimSelected">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Claim Adjudication Workflow: #{{ c.claimId }}</h1>
+        <p class="page-subtitle">Policy: {{ c.policyId }} • Status: <span class="badge" [ngClass]="{
+          'badge-warning': c.status === 'DRAFT' || c.status === 'DOCUMENTS_SUBMITTED',
+          'badge-info': c.status === 'DELAY_VERIFIED' || c.status === 'ELIGIBILITY_VERIFIED',
+          'badge-success': c.status === 'APPROVED' || c.status === 'CLOSED' || c.status === 'SETTLED',
+          'badge-danger': c.status === 'REJECTED'
+        }">{{ c.status }}</span></p>
+      </div>
+      <div style="display: flex; gap: 0.5rem;">
+        <a routerLink="/claims/adjudication" [queryParams]="{}" class="btn btn-outline">Change Claim</a>
+        <a routerLink="/claims" class="btn btn-outline">All Claims</a>
+      </div>
+    </div>
+
+    <div class="workflow-grid">
+      <div class="card">
+        <h3 class="card-title">Claim Summary</h3>
+        <div class="info-row">
+          <span>Claimed Amount:</span>
+          <strong>₹{{ c.claimedAmount | number }}</strong>
+        </div>
+        <div class="info-row">
+          <span>Approved Amount:</span>
+          <strong class="highlight">₹{{ (c.approvedAmount || 0) | number }}</strong>
+        </div>
+        <div class="info-row">
+          <span>Calculated Delay Months:</span>
+          <strong>{{ c.eligibleDelayMonths || 0 }} Months</strong>
+        </div>
+        <div class="info-row">
+          <span>Status Remarks:</span>
+          <em>{{ c.remarks || 'No remarks recorded' }}</em>
+        </div>
+        <div class="info-row">
+          <span>Delay Reason:</span>
+          <p>{{ c.reason }}</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 class="card-title">Adjudication Pipeline</h3>
+        
+        <!-- Admin adjudication controls -->
+        <div class="step-buttons" *ngIf="isAdmin$ | async">
+          <button class="btn btn-primary" (click)="onCalculateDelay(c.claimId)" [disabled]="(loading$ | async) || c.status === 'APPROVED' || c.status === 'CLOSED'">
+            1. Calculate Verified Delay Months
+          </button>
+          <button class="btn btn-secondary" (click)="onCalculateCompensation(c.claimId)" [disabled]="(loading$ | async) || c.status === 'APPROVED' || c.status === 'CLOSED'">
+            2. Calculate Entitled Compensation
+          </button>
+          <button class="btn btn-info" (click)="onVerifyEligibility(c.claimId)" [disabled]="(loading$ | async) || c.status === 'APPROVED' || c.status === 'CLOSED'">
+            3. Verify Insurance Policy Eligibility
+          </button>
+
+          <div class="final-actions" *ngIf="c.status !== 'APPROVED' && c.status !== 'CLOSED' && c.status !== 'REJECTED'">
+            <button class="btn btn-success" (click)="onApprove(c.claimId)" [disabled]="loading$ | async">
+              4. Approve Claim & Initiate Payout
+            </button>
+            <button class="btn btn-danger" (click)="onReject(c.claimId)" [disabled]="loading$ | async">
+              Reject Claim
+            </button>
+          </div>
+
+          <div *ngIf="c.status === 'APPROVED'" style="margin-top: 1rem; padding: 1rem; background: #e8f5e9; border-radius: 8px; border: 1px solid #a5d6a7;">
+            <h4 style="color: #2e7d32; margin-top: 0;">Claim Approved & Payout Initiated</h4>
+            <p style="margin-bottom: 0.75rem; font-size: 0.95rem;">
+              Compensation of <strong>₹{{ (c.approvedAmount || 0) | number }}</strong> is authorized. Click below to disburse the payout directly.
+            </p>
+            <button class="btn btn-success btn-lg btn-block" (click)="onDisbursePayout(c)" [disabled]="disbursingPayout">
+              <span *ngIf="!disbursingPayout">💸 Disburse & Settle Payout (Close Claim)</span>
+              <span *ngIf="disbursingPayout">Disbursing Funds...</span>
+            </button>
+          </div>
+
+          <div *ngIf="c.status === 'CLOSED'" style="margin-top: 1rem; padding: 1rem; background: #f1f8e9; border-radius: 8px; border: 1px solid #c5e1a5;">
+            <h4 style="color: #33691e; margin: 0;">🎉 Claim Closed & Payout Settled</h4>
+            <p style="margin: 0.5rem 0 0 0; font-size: 0.95rem;">
+              The compensation payout for this claim has been successfully disbursed to the buyer.
+            </p>
+          </div>
+        </div>
+
+        <!-- Buyer read-only status timeline -->
+        <div *ngIf="isBuyer$ | async" style="padding: 1rem; background: #f8fafc; border-radius: 8px;">
+          <h4>Claim Assessment Progress</h4>
+          <p>Your claim is currently: <strong>{{ c.status }}</strong></p>
+          <div style="font-size: 0.9rem; color: #64748b;">
+            Adjudication operations and payout disbursement are managed by the underwriting authority.
+          </div>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- Fallback: When no specific claim is selected yet -->
+  <ng-template #noClaimSelected>
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Claims Adjudication Console</h1>
+        <p class="page-subtitle">Select a submitted buyer claim below to begin delay verification and payout calculations.</p>
+      </div>
+      <a routerLink="/admin/dashboard" class="btn btn-outline">&larr; Admin Dashboard</a>
+    </div>
+
+    <div *ngIf="allClaims$ | async as claims" class="card">
+      <div *ngIf="claims.length === 0" class="empty-state" style="padding: 2rem; text-align: center;">
+        <h3>No Claims Awaiting Adjudication</h3>
+        <p>No delay claims have been submitted by buyers at this time.</p>
+      </div>
+
+      <div *ngIf="claims.length > 0" class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Claim ID</th>
+              <th>Policy ID</th>
+              <th>Claimed Amount</th>
+              <th>Verified Delay</th>
+              <th>Approved Payout</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let c of claims">
+              <td><strong>{{ c.claimId }}</strong></td>
+              <td>{{ c.policyId }}</td>
+              <td>₹{{ c.claimedAmount | number }}</td>
+              <td>{{ c.eligibleDelayMonths ? (c.eligibleDelayMonths + ' Months') : 'Pending' }}</td>
+              <td>{{ c.approvedAmount ? ('₹' + (c.approvedAmount | number)) : 'Under Review' }}</td>
+              <td>
+                <span class="badge" [ngClass]="{
+                  'badge-warning': c.status === 'DRAFT' || c.status === 'DOCUMENTS_SUBMITTED',
+                  'badge-info': c.status === 'DELAY_VERIFIED' || c.status === 'ELIGIBILITY_VERIFIED',
+                  'badge-success': c.status === 'APPROVED' || c.status === 'CLOSED' || c.status === 'SETTLED',
+                  'badge-danger': c.status === 'REJECTED'
+                }">{{ c.status }}</span>
+              </td>
+              <td>
+                <a [routerLink]="['/claims/adjudication']" [queryParams]="{ claimId: c.claimId }" class="btn btn-primary btn-sm">
+                  ⚡ Adjudicate Claim
+                </a>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </ng-template>
+</div>

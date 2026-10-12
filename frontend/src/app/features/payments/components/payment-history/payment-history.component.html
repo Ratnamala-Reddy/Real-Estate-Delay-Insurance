@@ -1,0 +1,254 @@
+<div class="container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Transaction & Escrow Ledger</h1>
+      <p class="page-subtitle">Real-time payment authorization, escrow settlement, and compensation disbursement ledger</p>
+    </div>
+    <div class="header-actions">
+      <a routerLink="/policies" class="btn btn-outline">My Policies</a>
+      <a routerLink="/claims" class="btn btn-outline">Claims Queue</a>
+    </div>
+  </div>
+
+  <!-- Navigation Tabs -->
+  <div class="tabs-nav mb-4">
+    <button class="tab-btn" [class.active]="activeTab === 'premium'" (click)="setTab('premium')">
+      🛡️ Premium Escrow Payments
+    </button>
+    <button class="tab-btn" [class.active]="activeTab === 'compensation'" (click)="setTab('compensation')">
+      💸 Delay Compensation Disbursements
+    </button>
+  </div>
+
+  <!-- TAB 1: PREMIUM PAYMENTS -->
+  <div *ngIf="activeTab === 'premium'">
+    <ng-container *ngIf="(settledPayment || (payment$ | async)) as p; else allPremiumList">
+      
+      <!-- Success Banner when Policy is Auto-Generated -->
+      <div class="success-banner card" *ngIf="p.status === 'SUCCESS'">
+        <div class="success-banner-content">
+          <div class="success-icon">🎉</div>
+          <div>
+            <h3>Payment Successfully Settled & Policy Generated!</h3>
+            <p>
+              Your escrow premium of <strong>₹{{ p.premiumAmount | number }}</strong> has been confirmed. 
+              The microservice platform has automatically created your <strong>Active Project Delay Insurance Policy</strong>.
+            </p>
+          </div>
+        </div>
+        <div class="success-actions">
+          <a routerLink="/policies" class="btn btn-success btn-lg">
+            📄 View Active Policy Certificate &rarr;
+          </a>
+        </div>
+      </div>
+
+      <!-- Payment Detail Card -->
+      <div class="card payment-card">
+        <div class="card-header-flex">
+          <div>
+            <span class="sub-label">TRANSACTION REFERENCE</span>
+            <h2>{{ p.transactionReference || ('TXN-' + (p.paymentId | slice:0:8)) }}</h2>
+          </div>
+          <div class="badge-wrap">
+            <span class="badge" [ngClass]="{
+              'badge-success': p.status === 'SUCCESS',
+              'badge-warning': p.status === 'INITIATED' || p.status === 'PENDING',
+              'badge-danger': p.status === 'FAILED'
+            }">{{ p.status }}</span>
+          </div>
+        </div>
+
+        <div class="payment-grid">
+          <div class="detail-box">
+            <span class="detail-label">Payment ID</span>
+            <span class="detail-val code-text">{{ p.paymentId }}</span>
+          </div>
+          <div class="detail-box">
+            <span class="detail-label">Accepted Quote ID</span>
+            <span class="detail-val code-text">{{ p.quoteId }}</span>
+          </div>
+          <div class="detail-box" *ngIf="p.applicationId">
+            <span class="detail-label">Application ID</span>
+            <span class="detail-val code-text">{{ p.applicationId }}</span>
+          </div>
+          <div class="detail-box">
+            <span class="detail-label">Payment Gateway / Escrow Provider</span>
+            <span class="detail-val provider-tag">{{ p.paymentProvider || 'RAZORPAY_ESCROW' }}</span>
+          </div>
+          <div class="detail-box highlight-box">
+            <span class="detail-label">Total Premium Amount</span>
+            <span class="detail-val price-val">₹{{ p.premiumAmount | number }}</span>
+          </div>
+          <div class="detail-box" *ngIf="p.createdAt">
+            <span class="detail-label">Initiation Timestamp</span>
+            <span class="detail-val">{{ p.createdAt | date:'medium' }}</span>
+          </div>
+        </div>
+
+        <!-- Action Area for INITIATED status -->
+        <div class="action-section" *ngIf="p.status === 'INITIATED'">
+          <div class="notice-box">
+            <div class="notice-icon">⚡</div>
+            <div class="notice-text">
+              <strong>Escrow Pre-Authorization Active</strong>
+              <p>
+                Your payment has been registered in the escrow gateway. Click below to confirm gateway settlement and automatically issue your active insurance policy.
+              </p>
+            </div>
+          </div>
+
+          <div *ngIf="errorMessage" class="error-box">
+            ⚠️ {{ errorMessage }}
+          </div>
+
+          <div class="settle-btn-row">
+            <button 
+              type="button" 
+              class="btn btn-primary btn-lg" 
+              (click)="onSettlePayment(p)" 
+              [disabled]="settling">
+              <span *ngIf="!settling">⚡ Confirm Settlement & Auto-Generate Policy</span>
+              <span *ngIf="settling">Processing Settlement & Policy Creation...</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Action Area for SUCCESS status -->
+        <div class="action-section success-section" *ngIf="p.status === 'SUCCESS'">
+          <div class="policy-ready-box">
+            <h4>✅ Insurance Protection Active</h4>
+            <p>Your property is now protected against developer delays under our smart indemnity contract.</p>
+            <div class="btn-group">
+              <a routerLink="/policies" class="btn btn-primary">Go to Policies Portfolio &rarr;</a>
+              <a routerLink="/claims/new" class="btn btn-outline">File Delay Claim</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+
+    <ng-template #allPremiumList>
+      <div *ngIf="allPayments$ | async as allList" style="width: 100%;">
+        <div *ngIf="allList.length > 0; else completelyEmpty">
+          <div class="card" style="padding: 1.5rem; margin-bottom: 2rem;">
+            <h3 style="margin-top: 0; margin-bottom: 1rem;">
+              <ng-container *ngIf="isBuyer$ | async">My Registered Escrow Premium Payments</ng-container>
+              <ng-container *ngIf="isAdmin$ | async">All Registered Escrow Premium Payments</ng-container>
+            </h3>
+            <div class="table-responsive">
+              <table class="table" style="width: 100%;">
+                <thead>
+                  <tr>
+                    <th>Payment ID</th>
+                    <th>Reference</th>
+                    <th>Quote ID</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let item of allList">
+                    <td><code>{{ item.paymentId }}</code></td>
+                    <td>{{ item.transactionReference || 'N/A' }}</td>
+                    <td><code>{{ item.quoteId }}</code></td>
+                    <td><strong style="color: #16a34a; font-size: 0.95rem;">₹{{ item.premiumAmount | number }}</strong></td>
+                    <td>
+                      <span class="badge" [ngClass]="{
+                        'badge-success': item.status === 'SUCCESS',
+                        'badge-warning': item.status === 'INITIATED' || item.status === 'PENDING',
+                        'badge-danger': item.status === 'FAILED'
+                      }">{{ item.status }}</span>
+                    </td>
+                    <td>
+                      <button 
+                        *ngIf="item.status === 'INITIATED' || item.status === 'PENDING'"
+                        type="button" 
+                        class="btn btn-primary btn-sm" 
+                        (click)="onSettlePayment(item)" 
+                        [disabled]="settling">
+                        ⚡ Settle & Issue Policy
+                      </button>
+                      <a *ngIf="item.status === 'SUCCESS'" routerLink="/policies" class="btn btn-outline btn-sm">
+                        View Policy &rarr;
+                      </a>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <ng-template #completelyEmpty>
+          <div class="card empty-state-card">
+            <div class="empty-icon">💳</div>
+            <h3>No Premium Payments Found</h3>
+            <p *ngIf="isBuyer$ | async">You have not initiated any escrow premium payments for your applications yet.</p>
+            <p *ngIf="isAdmin$ | async">There are no escrow payments recorded across the platform.</p>
+            <a routerLink="/applications" class="btn btn-primary">Go to Applications</a>
+          </div>
+        </ng-template>
+      </div>
+    </ng-template>
+  </div>
+
+  <!-- TAB 2: COMPENSATION PAYOUTS -->
+  <div *ngIf="activeTab === 'compensation'">
+    <div *ngIf="compensationPayments$ | async as compList" style="width: 100%;">
+      <div class="card" *ngIf="compList.length > 0; else noComp">
+        <h3 style="margin-top: 0; margin-bottom: 0.5rem;">
+          <ng-container *ngIf="isBuyer$ | async">My Delay Compensation Disbursements Ledger</ng-container>
+          <ng-container *ngIf="isAdmin$ | async">All Delay Compensation Payouts Ledger</ng-container>
+        </h3>
+        <p class="text-muted" style="font-size: 0.875rem; margin-bottom: 1.25rem;">
+          <ng-container *ngIf="isBuyer$ | async">Verified and approved delay payouts disbursed for your policies</ng-container>
+          <ng-container *ngIf="isAdmin$ | async">Verified and approved delay payouts disbursed to property buyers</ng-container>
+        </p>
+
+        <div class="table-responsive">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Payment ID</th>
+                <th>Claim ID</th>
+                <th>Policy ID</th>
+                <th>Disbursed Amount</th>
+                <th>Transaction Ref</th>
+                <th>Status</th>
+                <th>Disbursed At</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let c of compList">
+                <td><code>{{ c.paymentId }}</code></td>
+                <td><code>{{ c.claimId }}</code></td>
+                <td><code>{{ c.policyId }}</code></td>
+                <td><strong style="color: #16a34a; font-size: 1rem;">₹{{ (c.payoutAmount || 0) | number }}</strong></td>
+                <td><span class="badge badge-neutral">{{ c.transactionReference || 'TXN-DIRECT' }}</span></td>
+                <td>
+                  <span class="badge" [ngClass]="{
+                    'badge-success': c.status === 'PAID' || c.status === 'SUCCESS',
+                    'badge-warning': c.status === 'INITIATED' || c.status === 'PENDING',
+                    'badge-danger': c.status === 'FAILED'
+                  }">{{ c.status }}</span>
+                </td>
+                <td>{{ c.createdAt | date:'medium' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <ng-template #noComp>
+        <div class="card empty-state-card">
+          <div class="empty-icon">💸</div>
+          <h3>No Compensation Payouts Recorded Yet</h3>
+          <p *ngIf="isBuyer$ | async">When your delay claims are approved by underwriters and disbursed, your payouts appear here.</p>
+          <p *ngIf="isAdmin$ | async">When delay claims are approved by underwriters and disbursed, payouts appear here.</p>
+          <a routerLink="/claims" class="btn btn-primary">View Claims Queue</a>
+        </div>
+      </ng-template>
+    </div>
+  </div>
+</div>

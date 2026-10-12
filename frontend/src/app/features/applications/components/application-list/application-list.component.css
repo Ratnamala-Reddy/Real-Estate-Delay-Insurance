@@ -1,0 +1,30 @@
+.loading-box {
+  text-align: center;
+  padding: 3rem;
+  color: var(--slate-500);
+}
+
+.empty-state {
+  text-align: center;
+  padding: 3.5rem 1.5rem;
+}
+
+.empty-icon {
+  font-size: 3rem;
+  margin-bottom: 0.75rem;
+}
+
+.project-name {
+  font-weight: 600;
+  color: var(--slate-900);
+}
+
+.builder-name {
+  font-size: 0.8rem;
+  color: var(--slate-500);
+}
+
+.btn-sm {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+}

@@ -1,0 +1,104 @@
+<div class="container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Underwriting Adjudication: Application #{{ applicationId }}</h1>
+      <p class="page-subtitle">Verify builder title, RERA compliance, and applicant risk clearance</p>
+    </div>
+    <a routerLink="/verifications" class="btn btn-outline">Back to Queue</a>
+  </div>
+
+  <!-- Warning Banner for Unverified User Account -->
+  <div *ngIf="isApplicantPending" class="alert alert-warning mb-4" style="background: #fffbeb; border: 1.5px solid #fde68a; border-radius: 10px; padding: 1.25rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+    <div style="display: flex; gap: 0.85rem; align-items: flex-start;">
+      <div style="font-size: 1.5rem;">⚠️</div>
+      <div>
+        <strong style="color: #92400e; font-size: 0.95rem; display: block; margin-bottom: 0.25rem;">
+          Applicant User Account is PENDING_VERIFICATION
+        </strong>
+        <p style="color: #b45309; font-size: 0.85rem; margin: 0;">
+          Buyer <strong>{{ applicantUser?.firstName }} {{ applicantUser?.lastName }} ({{ applicantUser?.email }})</strong> has registered but is not yet activated. Underwriting approval requires active user credentials.
+        </p>
+      </div>
+    </div>
+    <button type="button" class="btn btn-warning" (click)="onActivateApplicant()" [disabled]="activatingUser" style="white-space: nowrap;">
+      <span *ngIf="!activatingUser">⚡ Activate User Account Now</span>
+      <span *ngIf="activatingUser">Activating...</span>
+    </button>
+  </div>
+
+  <div class="process-grid">
+    <!-- Application & Applicant Overview Card -->
+    <div class="card" *ngIf="application as app">
+      <h3 class="card-title">Application & Applicant Overview</h3>
+      <div class="status-row" style="margin-bottom: 0.75rem;">
+        <span class="status-label">Project:</span>
+        <strong>{{ app.projectName }} (Unit {{ app.unitNumber }})</strong>
+      </div>
+      <div class="status-row" style="margin-bottom: 0.75rem;">
+        <span class="status-label">Builder Name:</span>
+        <span>{{ app.builderName }}</span>
+      </div>
+      <div class="status-row" style="margin-bottom: 0.75rem;">
+        <span class="status-label">Property Value:</span>
+        <strong style="color: #16a34a;">₹{{ app.propertyValue | number }}</strong>
+      </div>
+      <div class="status-row" style="margin-bottom: 0.75rem;" *ngIf="applicantUser as u">
+        <span class="status-label">Applicant Status:</span>
+        <span class="badge" [ngClass]="{
+          'badge-warning': u.status === 'PENDING_VERIFICATION',
+          'badge-success': u.status === 'ACTIVE'
+        }">{{ u.status }}</span>
+      </div>
+
+      <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 1rem 0;" />
+
+      <!-- Existing Verification Record if available -->
+      <ng-container *ngIf="verification$ | async as ver">
+        <h4 style="font-size: 0.9rem; font-weight: 700; margin-bottom: 0.5rem; color: #475569;">Verification State</h4>
+        <div class="status-row">
+          <span class="status-label">Current Stage:</span>
+          <span class="badge badge-info">{{ ver.verificationStatus }}</span>
+        </div>
+        <p class="remarks-box" *ngIf="ver.remarks" style="margin-top: 0.5rem;"><strong>Latest Remarks:</strong> {{ ver.remarks }}</p>
+        <div class="meta-row" *ngIf="ver.verifiedBy" style="font-size: 0.8rem; color: #64748b; margin-top: 0.5rem;">
+          <span>Verified by: {{ ver.verifiedBy }}</span>
+          <span *ngIf="ver.verifiedAt"> | At: {{ ver.verifiedAt | date:'medium' }}</span>
+        </div>
+      </ng-container>
+    </div>
+
+    <!-- Actions Card -->
+    <div class="card">
+      <h3 class="card-title">Underwriting Decision Actions</h3>
+      <form [formGroup]="actionForm">
+        <div class="form-group">
+          <label class="form-label" for="officer">Underwriting Officer / Agent</label>
+          <input id="officer" type="text" formControlName="officer" class="form-control" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="remarks">Assessment & Inspection Notes</label>
+          <textarea id="remarks" rows="4" formControlName="remarks" class="form-control" placeholder="Detail verification findings, RERA approvals, title deeds check..."></textarea>
+          <div class="form-error" *ngIf="actionForm.get('remarks')?.touched && actionForm.get('remarks')?.invalid">
+            Remarks of at least 5 characters are required.
+          </div>
+        </div>
+
+        <div class="action-buttons">
+          <button type="button" class="btn btn-info" (click)="onVerifyProperty()" [disabled]="actionForm.invalid || (loading$ | async)">
+            Step 1: Property Verified
+          </button>
+          <button type="button" class="btn btn-warning" (click)="onRequestInfo()" [disabled]="actionForm.invalid || (loading$ | async)">
+            Request More Info
+          </button>
+          <button type="button" class="btn btn-success" (click)="onApprove()" [disabled]="actionForm.invalid || (loading$ | async)">
+            Step 2: Final Approval &rarr;
+          </button>
+          <button type="button" class="btn btn-danger" (click)="onReject()" [disabled]="actionForm.invalid || (loading$ | async)">
+            Reject Application
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

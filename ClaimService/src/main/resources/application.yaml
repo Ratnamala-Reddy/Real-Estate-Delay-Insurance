@@ -1,0 +1,58 @@
+server:
+  port: 8087
+
+spring:
+  application:
+    name: CLAIM-SERVICE
+
+  r2dbc:
+    url: r2dbc:mysql://localhost:3306/claim_db
+    username: root
+    password: Ratna@1234
+
+  sql:
+    init:
+      mode: always
+      schema-location: classpath:schema.sql
+
+services:
+  application-service:
+    url: http://localhost:8082
+
+  policy-service:
+    url: http://localhost:8085
+
+  payment-service:
+    url: http://localhost:8086
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+  info:
+    app:
+      name: Claim Service
+      version: 1.0
+      description: Claim Microservice
+
+jwt:
+  secret: mySecretKeyForRealEstateProjectDelayInsurancePlatform2026SecureKey
+
+logging:
+  level:
+    root: INFO
+    org.example.claimservice: DEBUG
+    org.springframework.r2dbc: DEBUG
+    org.springframework.web: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"

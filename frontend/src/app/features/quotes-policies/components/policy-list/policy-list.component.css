@@ -1,0 +1,32 @@
+.loading-state, .empty-state {
+  text-align: center;
+  padding: 3rem;
+  color: var(--slate-500);
+}
+.btn-sm {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+}
+.policy-monthly-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  padding: 0.4rem 0.75rem;
+  border-radius: var(--radius-sm, 6px);
+  margin-top: 0.75rem;
+}
+.dot-paid {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #16a34a;
+  box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.2);
+}
+.paid-label {
+  font-size: 0.775rem;
+  font-weight: 600;
+  color: #166534;
+}
+

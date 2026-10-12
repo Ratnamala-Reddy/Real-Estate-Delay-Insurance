@@ -1,0 +1,76 @@
+.loading-state, .empty-state {
+  text-align: center;
+  padding: 3rem;
+  color: var(--slate-500);
+}
+
+.text-muted {
+  color: var(--slate-500);
+}
+
+.btn-sm {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+}
+
+.project-name {
+  font-weight: 600;
+  color: var(--slate-900);
+}
+
+.queue-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 1.1rem;
+  background: #ffffff;
+  border: 1px solid var(--slate-200);
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--slate-600);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tab-btn:hover {
+  background: var(--slate-50);
+  color: var(--slate-900);
+}
+
+.tab-btn.active {
+  background: var(--primary);
+  color: #ffffff;
+  border-color: var(--primary);
+}
+
+.tab-badge {
+  background: var(--slate-100);
+  color: var(--slate-700);
+  font-size: 0.75rem;
+  padding: 0.1rem 0.45rem;
+  border-radius: 9999px;
+  font-weight: 700;
+}
+
+.tab-btn.active .tab-badge {
+  background: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+}
+
+.tab-badge.badge-warn {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.tab-badge.badge-success {
+  background: #d1fae5;
+  color: #065f46;
+}

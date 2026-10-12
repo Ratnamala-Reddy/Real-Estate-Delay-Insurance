@@ -1,0 +1,237 @@
+<div class="container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Project Delay Insurance Plans</h1>
+      <p class="page-subtitle">Quotes generated for Application #{{ applicationId }}</p>
+    </div>
+    <a [routerLink]="['/applications', applicationId]" class="btn btn-outline">Back to Application</a>
+  </div>
+
+  <!-- Information banner on dynamic calculation -->
+  <div class="card mb-4" style="background: #f8fafc; border: 1px solid #e2e8f0;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+      <div>
+        <h4 style="margin: 0 0 0.25rem 0; font-size: 1rem; color: #1e293b; font-weight: 600;">
+          📊 Dynamic Actuarial Pricing Engine
+        </h4>
+        <p style="margin: 0; font-size: 0.85rem; color: #64748b;">
+          Coverage and premium amounts are mathematically derived from the registered property value (₹{{ propertyValue | number }}) and assessed risk profile.
+        </p>
+      </div>
+      <div *ngIf="riskAssessment" style="display: flex; gap: 0.5rem; align-items: center;">
+        <span class="badge" [ngClass]="{
+          'badge-success': riskAssessment.riskCategory === 'LOW',
+          'badge-warning': riskAssessment.riskCategory === 'MEDIUM',
+          'badge-danger': riskAssessment.riskCategory === 'HIGH'
+        }" style="font-size: 0.85rem; padding: 0.4rem 0.75rem;">
+          {{ riskAssessment.riskCategory }} RISK (Health Score: {{ riskAssessment.riskScore }}/100, Multiplier: {{ riskAssessment.premiumMultiplier }}x)
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dynamic Quote Formulation & Recalculation Tool -->
+  <ng-container *ngIf="quotes$ | async as quotes">
+    <div class="card mb-4 admin-banner">
+      <div class="admin-banner-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
+        <div>
+          <h3 class="card-title mb-1">
+            {{ (userRole$ | async) === 'ADMIN' ? 'Underwriter Dynamic Quote Management' : 'Rating & Pricing Engine — Quotation Formulation' }}
+          </h3>
+          <p class="text-muted mb-0" *ngIf="quotes.length > 0">
+            {{ quotes.length }} Quotes currently generated and active. You can recalculate quotes dynamically anytime to reflect property value or risk changes.
+          </p>
+          <p class="text-muted mb-0" *ngIf="quotes.length === 0">
+            No quotes generated yet. Generate 3-tier dynamic quotes calculated directly from property value and assessed risk score.
+          </p>
+        </div>
+        <span class="badge badge-success" *ngIf="quotes.length > 0">{{ quotes.length }} Tiers Active</span>
+      </div>
+
+      <form [formGroup]="generateForm" (ngSubmit)="onGenerateQuotes()" class="gen-form" style="display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap;">
+        <div class="form-group mb-0" style="flex: 1; min-width: 260px;">
+          <label class="form-label" for="covAmount">Project Property Value / Base Asset (₹)</label>
+          <input id="covAmount" type="number" formControlName="baseCoverageAmount" class="form-control" />
+        </div>
+        <button type="submit" class="btn btn-primary" [disabled]="generateForm.invalid || (loading$ | async)">
+          {{ quotes.length > 0 ? '🔄 Recalculate / Regenerate Dynamic Quotes' : 'Generate 3-Tier Dynamic Quotes (Basic, Standard, Premium)' }}
+        </button>
+      </form>
+    </div>
+  </ng-container>
+
+  <div *ngIf="loading$ | async" class="loading-state">
+    <p>Loading quote plans...</p>
+  </div>
+
+  <ng-container *ngIf="quotes$ | async as quotes">
+    <div *ngIf="quotes.length === 0 && !(loading$ | async)" class="card empty-state">
+      <h3>No Quotes Generated Yet</h3>
+      <p>Underwriters are reviewing the risk profile to formulate custom premium quotes.</p>
+    </div>
+
+    <div *ngIf="quotes.length > 0" class="quotes-grid">
+      <div *ngFor="let q of quotes" class="card quote-card">
+        <div class="card-header-row">
+          <div>
+            <h3 class="plan-name">{{ q.planName }} PLAN</h3>
+            <span style="font-size: 0.75rem; color: #64748b; font-weight: 500;">
+              {{ q.planName === 'BASIC' ? '50% Flat Coverage' : (q.planName === 'STANDARD' ? '80% Flat Coverage (Recommended)' : '100% Full Flat Coverage') }}
+            </span>
+          </div>
+          <span class="badge" [ngClass]="{
+            'badge-info': q.status === 'GENERATED',
+            'badge-success': q.status === 'ACCEPTED',
+            'badge-danger': q.status === 'DECLINED',
+            'badge-neutral': q.status === 'EXPIRED'
+          }">{{ q.status }}</span>
+        </div>
+        
+        <div class="pricing-box">
+          <div class="price">₹{{ q.premiumAmount | number }}</div>
+          <div class="price-sub">One-Time Escrow Premium</div>
+        </div>
+
+        <ul class="plan-features">
+          <li><strong>Coverage (Max Payout):</strong> ₹{{ q.maximumPayout | number }}</li>
+          <li><strong>Monthly Delay Payout:</strong> ₹{{ q.monthlyCompensation | number }} / month</li>
+          <li><strong>Max Delay Covered:</strong> {{ q.maximumDelayMonths }} Months</li>
+          <li><strong>Grace Period:</strong> {{ q.gracePeriodDays }} Days</li>
+          <li><strong>Quote Reference:</strong> <code>{{ q.quoteId | slice:0:12 }}...</code></li>
+        </ul>
+
+        <!-- Buyer Actions -->
+        <ng-container *ngIf="(userRole$ | async) === 'BUYER'">
+          <div class="card-actions" *ngIf="q.status === 'GENERATED'">
+            <button class="btn btn-primary btn-block" (click)="openSelectConfirmation(q)">
+              Select {{ q.planName }} Plan &rarr;
+            </button>
+            <button class="btn btn-outline btn-block btn-sm" (click)="openDeclineConfirmation(q)">
+              Decline Plan
+            </button>
+          </div>
+
+          <div *ngIf="q.status === 'ACCEPTED'" class="accepted-section">
+            <div *ngIf="isQuotePaid(q.quoteId); else notPaidYet">
+              <div class="paid-month-box mb-2">
+                <span class="paid-icon">✓</span>
+                <div>
+                  <strong>Payment Done for This Month</strong>
+                  <p class="paid-sub">Your monthly escrow premium has been processed.</p>
+                </div>
+              </div>
+              <a routerLink="/policies" class="btn btn-outline btn-block">
+                View Active Policy Certificate &rarr;
+              </a>
+            </div>
+
+            <ng-template #notPaidYet>
+              <div class="accepted-tag mb-2">
+                ✓ Confirmed Plan Selection
+              </div>
+              <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 0.5rem; text-align: center;">
+                You have chosen this policy plan. Proceed to escrow checkout when you're ready.
+              </p>
+              <a [routerLink]="['/payments/checkout', q.quoteId]" class="btn btn-success btn-block btn-lg">
+                Proceed to Checkout (₹{{ q.premiumAmount | number }}) &rarr;
+              </a>
+            </ng-template>
+          </div>
+
+          <div *ngIf="q.status === 'DECLINED'" class="declined-tag">
+            ✕ Declined
+          </div>
+        </ng-container>
+
+        <!-- Admin View Meta -->
+        <ng-container *ngIf="(userRole$ | async) === 'ADMIN'">
+          <div class="admin-quote-footer">
+            <div *ngIf="q.status === 'GENERATED'" class="admin-status-note info">
+              <span>⏳ Awaiting Buyer Plan Selection</span>
+            </div>
+            <div *ngIf="q.status === 'ACCEPTED'" class="admin-status-note success">
+              <span>✓ Plan Accepted by Buyer — Ready for Payment</span>
+            </div>
+            <div *ngIf="q.status === 'DECLINED'" class="admin-status-note danger">
+              <span>✕ Plan Declined by Buyer</span>
+            </div>
+          </div>
+        </ng-container>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- Selection Confirmation Modal -->
+  <div class="modal-backdrop" *ngIf="selectedQuoteForConfirmation as sel">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Confirm Plan Selection</h3>
+        <button class="close-btn" (click)="cancelSelectConfirmation()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="plan-summary-badge">{{ sel.planName }} PLAN</div>
+        <p class="modal-lead">
+          Please confirm that you would like to select the <strong>{{ sel.planName }} Plan</strong> for this application.
+        </p>
+        
+        <div class="confirm-details-box">
+          <div class="confirm-row">
+            <span>One-Time Escrow Premium:</span>
+            <strong class="text-primary" style="font-size: 1.15rem;">₹{{ sel.premiumAmount | number }}</strong>
+          </div>
+          <div class="confirm-row">
+            <span>Monthly Delay Compensation:</span>
+            <strong>₹{{ sel.monthlyCompensation | number }} / month</strong>
+          </div>
+          <div class="confirm-row">
+            <span>Maximum Delay Covered:</span>
+            <strong>{{ sel.maximumDelayMonths }} Months</strong>
+          </div>
+          <div class="confirm-row">
+            <span>Max Total Payout:</span>
+            <strong>₹{{ sel.maximumPayout | number }}</strong>
+          </div>
+          <div class="confirm-row">
+            <span>Grace Period:</span>
+            <strong>{{ sel.gracePeriodDays }} Days</strong>
+          </div>
+        </div>
+
+        <div class="alert alert-info" style="margin-top: 1rem; font-size: 0.85rem; padding: 0.75rem; border-radius: 6px; background: #f0f9ff; border: 1px solid #bae6fd; color: #0369a1;">
+          ℹ️ Selecting this plan will finalize your quote. You can then review and proceed to payment when you are ready.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" (click)="cancelSelectConfirmation()">Cancel</button>
+        <button class="btn btn-primary" (click)="confirmAccept()" [disabled]="loading$ | async">
+          <span *ngIf="!(loading$ | async)">Confirm & Select Plan</span>
+          <span *ngIf="loading$ | async">Selecting...</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Decline Confirmation Modal -->
+  <div class="modal-backdrop" *ngIf="declineQuoteForConfirmation as dec">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title text-danger">Decline Quote</h3>
+        <button class="close-btn" (click)="cancelDeclineConfirmation()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>
+          Are you sure you want to decline the <strong>{{ dec.planName }} Plan</strong> (₹{{ dec.premiumAmount | number }})?
+        </p>
+        <p class="text-muted" style="font-size: 0.85rem;">
+          Once declined, this quote plan will no longer be available for checkout.
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" (click)="cancelDeclineConfirmation()">Cancel</button>
+        <button class="btn btn-danger" (click)="confirmDecline()" [disabled]="loading$ | async">
+          Confirm Decline
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

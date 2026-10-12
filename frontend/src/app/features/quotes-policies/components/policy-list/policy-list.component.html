@@ -1,0 +1,73 @@
+<div class="container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Active Project Delay Policies</h1>
+      <p class="page-subtitle">Underwritten insurance coverage backing ongoing property construction</p>
+    </div>
+  </div>
+
+  <div *ngIf="loading$ | async" class="loading-state">
+    <p>Loading issued policies...</p>
+  </div>
+
+  <ng-container *ngIf="policies$ | async as policies">
+    <div *ngIf="policies.length === 0 && !(loading$ | async)" class="card empty-state" style="text-align: center; padding: 3rem 1.5rem;">
+      <h3>No Active Policies Found</h3>
+      <p style="color: var(--slate-500); margin: 0.5rem 0 1.25rem 0;">Accepted insurance quotes with completed premium payments will appear here.</p>
+      <a *ngIf="isBuyer$ | async" routerLink="/applications" class="btn btn-primary">Check Applications</a>
+    </div>
+
+    <!-- Cards Grid View -->
+    <div *ngIf="policies.length > 0" class="cards-grid mb-4">
+      <div *ngFor="let p of policies" class="entity-card">
+        <div>
+          <div class="entity-card-header">
+            <div>
+              <div class="entity-card-title">{{ p.policyNumber || ('POL-' + p.policyId) }}</div>
+              <div class="entity-card-subtitle">App ID: <code>{{ p.applicationId }}</code></div>
+            </div>
+            <span class="badge" [ngClass]="{
+              'badge-success': p.policyStatus === 'ACTIVE',
+              'badge-primary': p.policyStatus === 'GENERATED',
+              'badge-info': p.policyStatus === 'COMPLETED',
+              'badge-neutral': p.policyStatus === 'CLOSED'
+            }">{{ p.policyStatus }}</span>
+          </div>
+
+          <div class="entity-card-metrics">
+            <div class="metric-item">
+              <span class="metric-label">Coverage Sum</span>
+              <span class="metric-value highlight">₹{{ p.coverageAmount | number }}</span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">Premium Paid</span>
+              <span class="metric-value">₹{{ p.premiumAmount | number }}</span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">Valid From</span>
+              <span class="metric-value" style="font-size: 0.85rem;">{{ p.startDate | date:'mediumDate' }}</span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">Expires On</span>
+              <span class="metric-value" style="font-size: 0.85rem;">{{ p.endDate | date:'mediumDate' }}</span>
+            </div>
+          </div>
+
+          <div class="policy-monthly-status" *ngIf="p.policyStatus === 'ACTIVE'">
+            <span class="dot-paid"></span>
+            <span class="paid-label">Payment Done for This Month</span>
+          </div>
+        </div>
+
+        <div class="entity-card-actions">
+          <a [routerLink]="['/policies', p.policyId]" class="btn btn-outline btn-sm" style="flex: 1;">
+            📄 View Certificate
+          </a>
+          <a *ngIf="isBuyer$ | async" [routerLink]="['/claims/new']" [queryParams]="{ policyId: p.policyId }" class="btn btn-primary btn-sm" style="flex: 1;">
+            + File Claim
+          </a>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+</div>

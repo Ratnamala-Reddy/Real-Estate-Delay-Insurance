@@ -1,0 +1,55 @@
+server:
+  port: 8086
+
+spring:
+  application:
+    name: PAYMENT-SERVICE
+
+  r2dbc:
+    url: r2dbc:mysql://localhost:3306/payment_db
+    username: root
+    password: Ratna@1234
+
+  sql:
+    init:
+      mode: always
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+services:
+  application-service:
+    url: http://localhost:8082
+
+  policy-service:
+    url: http://localhost:8085
+
+  claim-service:
+    url: http://localhost:8087
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+  info:
+    app:
+      name: payment Service
+      version: 1.0
+      description: Payment Microservice
+
+jwt:
+ secret: mySecretKeyForRealEstateProjectDelayInsurancePlatform2026SecureKey
+
+logging:
+  level:
+    root: INFO
+    org.example.paymentservice: DEBUG
+    org.springframework.r2dbc: DEBUG
+    org.springframework.web: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"

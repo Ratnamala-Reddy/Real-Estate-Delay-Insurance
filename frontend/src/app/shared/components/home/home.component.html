@@ -1,0 +1,72 @@
+<div class="home-hero">
+  <div class="container hero-container">
+    <div *ngIf="currentUser$ | async as user; else defaultBadge" class="hero-badge" style="background: rgba(255,255,255,0.25); border-color: rgba(255,255,255,0.45);">
+      👋 Welcome back, {{ user.firstName }} {{ user.lastName }}
+    </div>
+    <ng-template #defaultBadge>
+      <div class="hero-badge">RERA & Risk Protected Real Estate Insurance</div>
+    </ng-template>
+    <h1 class="hero-title">Safeguard Your Dream Home Against Possession Delays</h1>
+    <p class="hero-subtitle">
+      Comprehensive financial compensation and risk assessment coverage for homebuyers facing builder project delays and construction default.
+    </p>
+
+    <div class="hero-actions">
+      <ng-container *ngIf="(isAuthenticated$ | async); else guestHero">
+        <ng-container *ngIf="(userRole$ | async) === 'ADMIN'; else buyerHero">
+          <a routerLink="/admin/dashboard" class="btn btn-primary btn-lg">Admin Command Center</a>
+          <a routerLink="/verifications" class="btn btn-outline btn-lg">Verification Queue</a>
+        </ng-container>
+        <ng-template #buyerHero>
+          <a routerLink="/applications/new" class="btn btn-primary btn-lg">Apply for Delay Insurance</a>
+          <a routerLink="/applications" class="btn btn-outline btn-lg">View My Applications</a>
+        </ng-template>
+      </ng-container>
+      <ng-template #guestHero>
+        <a routerLink="/auth/register" class="btn btn-primary btn-lg">Get Protected Today</a>
+        <a routerLink="/auth/login" class="btn btn-outline btn-lg">Sign In</a>
+      </ng-template>
+    </div>
+  </div>
+</div>
+
+<div class="container features-section">
+  <div class="section-header">
+    <h2 class="section-title">End-to-End Automated Protection Pipeline</h2>
+    <p class="section-subtitle">Powered by Reactive Microservices, AI Risk Scoring, and Automated Settlement</p>
+  </div>
+
+  <div class="feature-grid">
+    <div class="card feature-card">
+      <div class="feature-icon bg-blue">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+      </div>
+      <h3 class="feature-name">Seamless Application</h3>
+      <p class="feature-text">Apply in minutes by uploading purchase agreements, possession dates, and property details.</p>
+    </div>
+
+    <div class="card feature-card">
+      <div class="feature-icon bg-teal">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+      </div>
+      <h3 class="feature-name">RERA Verification</h3>
+      <p class="feature-text">Admin underwriting and verification verifies builder credentials and legal approvals.</p>
+    </div>
+
+    <div class="card feature-card">
+      <div class="feature-icon bg-amber">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+      </div>
+      <h3 class="feature-name">Multi-Tier Quotes</h3>
+      <p class="feature-text">Transparent Standard, Premium, and Comprehensive coverage tiers with dynamic monthly compensation payouts.</p>
+    </div>
+
+    <div class="card feature-card">
+      <div class="feature-icon bg-purple">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
+      </div>
+      <h3 class="feature-name">Instant Delay Payouts</h3>
+      <p class="feature-text">Automated delay calculations and compensation processing ensure timely settlements.</p>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,164 @@
+<div class="container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title" *ngIf="isBuyer$ | async">My Delay Claims & Payouts</h1>
+      <h1 class="page-title" *ngIf="isAdmin$ | async">Delay Claims Adjudication Queue</h1>
+      
+      <p class="page-subtitle" *ngIf="isBuyer$ | async">
+        Track delay verification, compensation calculations, and received payouts for your policies.
+      </p>
+      <p class="page-subtitle" *ngIf="isAdmin$ | async">
+        Review submitted delay proof, verify delay months, calculate compensation, and authorize settlement payouts.
+      </p>
+    </div>
+
+    <!-- Only Buyers can file claims -->
+    <a *ngIf="isBuyer$ | async" routerLink="/claims/new" class="btn btn-danger">
+      + File New Delay Claim
+    </a>
+
+    <!-- Admin quick link to Admin Dashboard -->
+    <a *ngIf="isAdmin$ | async" routerLink="/admin/dashboard" class="btn btn-outline">
+      &larr; Admin Operations Center
+    </a>
+  </div>
+
+  <div *ngIf="loading$ | async" class="loading-state">
+    <p>Loading claims data...</p>
+  </div>
+
+  <ng-container *ngIf="claims$ | async as claims">
+    <!-- Empty State for Buyer -->
+    <div *ngIf="claims.length === 0 && !(loading$ | async) && (isBuyer$ | async)" class="card empty-state">
+      <h3>No Claims Filed</h3>
+      <p>If your builder has delayed possession past the promised date, you can file a delay compensation claim.</p>
+      <a routerLink="/claims/new" class="btn btn-danger">File Delay Claim</a>
+    </div>
+
+    <!-- Empty State for Admin -->
+    <div *ngIf="claims.length === 0 && !(loading$ | async) && (isAdmin$ | async)" class="card empty-state">
+      <h3>No Claims in Queue</h3>
+      <p>There are currently no delay claims submitted by buyers awaiting review.</p>
+    </div>
+
+    <!-- Cards View -->
+    <div *ngIf="claims.length > 0" class="cards-grid mb-4">
+      <div *ngFor="let c of claims" class="entity-card">
+        <div>
+          <div class="entity-card-header">
+            <div>
+              <div class="entity-card-title">{{ c.claimId }}</div>
+              <div class="entity-card-subtitle">Policy: <code>{{ c.policyId }}</code></div>
+            </div>
+            <span class="badge" [ngClass]="{
+              'badge-warning': c.status === 'DRAFT' || c.status === 'DOCUMENTS_SUBMITTED',
+              'badge-info': c.status === 'DELAY_VERIFIED' || c.status === 'ELIGIBILITY_VERIFIED',
+              'badge-success': c.status === 'APPROVED' || c.status === 'CLOSED' || c.status === 'SETTLED',
+              'badge-danger': c.status === 'REJECTED'
+            }">{{ c.status }}</span>
+          </div>
+
+          <div class="entity-card-metrics">
+            <div class="metric-item">
+              <span class="metric-label">Claimed Amount</span>
+              <span class="metric-value">₹{{ c.claimedAmount | number }}</span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">Approved Payout</span>
+              <span class="metric-value" [style.color]="c.approvedAmount ? '#16a34a' : 'inherit'">
+                {{ c.approvedAmount ? ('₹' + (c.approvedAmount | number)) : 'Under Review' }}
+              </span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">Delay Duration</span>
+              <span class="metric-value">{{ c.eligibleDelayMonths ? (c.eligibleDelayMonths + ' Months') : 'Pending Verification' }}</span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">Submission Date</span>
+              <span class="metric-value" style="font-size: 0.85rem;">{{ c.createdAt | date:'mediumDate' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="entity-card-actions">
+          <a [routerLink]="['/claims/adjudication']" [queryParams]="{ claimId: c.claimId }" 
+             class="btn btn-sm" 
+             [ngClass]="(c.status === 'CLOSED' || c.status === 'SETTLED') ? 'btn-outline' : ((isAdmin$ | async) ? 'btn-primary' : 'btn-outline')"
+             style="width: 100%;">
+            <span *ngIf="isAdmin$ | async">
+              <ng-container *ngIf="c.status === 'CLOSED' || c.status === 'SETTLED'">📄 View Settled Payout</ng-container>
+              <ng-container *ngIf="c.status === 'APPROVED'">💸 Ready to Disburse</ng-container>
+              <ng-container *ngIf="c.status === 'REJECTED'">✕ View Rejection</ng-container>
+              <ng-container *ngIf="c.status !== 'CLOSED' && c.status !== 'SETTLED' && c.status !== 'APPROVED' && c.status !== 'REJECTED'">⚡ Adjudicate Claim &rarr;</ng-container>
+            </span>
+            <span *ngIf="isBuyer$ | async">
+              <ng-container *ngIf="c.status === 'CLOSED' || c.status === 'SETTLED'">🎉 Payout Settled (View)</ng-container>
+              <ng-container *ngIf="c.status === 'APPROVED'">✓ Approved (Awaiting Disbursement)</ng-container>
+              <ng-container *ngIf="c.status !== 'CLOSED' && c.status !== 'SETTLED' && c.status !== 'APPROVED'">Track Status &rarr;</ng-container>
+            </span>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Visible Compensation Payouts Section -->
+    <div class="card mt-4" *ngIf="compensationPayments$ | async as compList" style="margin-top: 2rem;">
+      <div class="card-header-row" style="margin-bottom: 1.25rem; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <h3 class="card-title" style="margin-bottom: 0.25rem; font-size: 1.2rem; font-weight: 700;">
+            <ng-container *ngIf="isBuyer$ | async">💸 My Delay Compensation Disbursements</ng-container>
+            <ng-container *ngIf="isAdmin$ | async">💸 Direct Compensation Payouts & Disbursements Queue</ng-container>
+          </h3>
+          <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 0; color: var(--slate-500);">
+            <ng-container *ngIf="isBuyer$ | async">Approved delay indemnity payouts disbursed directly to your bank account for your policies.</ng-container>
+            <ng-container *ngIf="isAdmin$ | async">Real-time ledger of approved delay indemnity disbursements processed by Payment Service.</ng-container>
+          </p>
+        </div>
+        <span class="badge badge-success">{{ compList.length }} Recorded</span>
+      </div>
+
+      <div *ngIf="compList.length === 0" class="empty-sub" style="padding: 1.5rem; text-align: center; color: var(--slate-500); background: #f8fafc; border-radius: 8px;">
+        <p style="margin-bottom: 0;" *ngIf="isBuyer$ | async">No compensation disbursements processed for your policies yet. Once your delay claims are approved, payouts will appear here.</p>
+        <p style="margin-bottom: 0;" *ngIf="isAdmin$ | async">No compensation disbursements processed yet. Once delay claims are approved, settlement payouts appear here.</p>
+      </div>
+
+      <!-- Card Grid for Compensation Payments -->
+      <div *ngIf="compList.length > 0" class="cards-grid">
+        <div *ngFor="let p of compList" class="entity-card" style="border-left: 4px solid var(--success);">
+          <div>
+            <div class="entity-card-header">
+              <div>
+                <div class="entity-card-title">Disbursement ₹{{ (p.payoutAmount || 0) | number }}</div>
+                <div class="entity-card-subtitle">Payment ID: <code>{{ p.paymentId }}</code></div>
+              </div>
+              <span class="badge" [ngClass]="{
+                'badge-success': p.status === 'PAID' || p.status === 'SUCCESS',
+                'badge-warning': p.status === 'INITIATED' || p.status === 'PENDING',
+                'badge-danger': p.status === 'FAILED'
+              }">{{ p.status }}</span>
+            </div>
+
+            <div class="entity-card-metrics">
+              <div class="metric-item">
+                <span class="metric-label">Claim ID</span>
+                <span class="metric-value"><code>{{ p.claimId }}</code></span>
+              </div>
+              <div class="metric-item">
+                <span class="metric-label">Policy ID</span>
+                <span class="metric-value"><code>{{ p.policyId }}</code></span>
+              </div>
+              <div class="metric-item">
+                <span class="metric-label">Txn Ref</span>
+                <span class="metric-value" style="font-size: 0.8rem;">{{ p.transactionReference || 'PENDING_TXN' }}</span>
+              </div>
+              <div class="metric-item">
+                <span class="metric-label">Processed At</span>
+                <span class="metric-value" style="font-size: 0.8rem;">{{ p.createdAt | date:'short' }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+</div>
